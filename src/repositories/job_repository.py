@@ -22,7 +22,7 @@ class JobRepository(IRepositoryAsync):
             job = Job(**job_to_create.dict())
 
             session.add(job)
-            await session.flush()
+            await session.commit()
         if not job.id:
             raise ValueError("Ошибка создания вакансии")
         return self.__to_job_model(job_from_db=job, include_relations=False)

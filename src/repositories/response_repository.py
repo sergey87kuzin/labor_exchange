@@ -5,6 +5,7 @@ from sqlalchemy import delete, select, update
 from sqlalchemy.orm import Session, joinedload
 
 from interfaces import IRepositoryAsync
+from models import Response as ShortResponseModel
 from models import ResponseWithUserAndJob as ResponseModel
 from models.job import JobFull as JobModel
 from models.user import ShortUser as UserModel
@@ -89,36 +90,36 @@ class ResponseRepository(IRepositoryAsync):
         self, response_id: int, user_id: int, response_update_dto: ResponseUpdateSchema
     ) -> ResponseModel:
         async with self.session() as session:
-            query = select(Response).filter_by(id=response_id, user_id=user_id).exists()
+
+            update_data = {
+                key: value for key, value in response_update_dto.dict().items() if value is not None
+            }
+            query = (
+                update(Response)
+                .filter_by(id=response_id, user_id=user_id)
+                .values(**update_data)
+                .returning(Response)
+            )
+            result = await session.execute(query)
+            updated_response = result.scalars().first()
+            if not updated_response:
+                raise ValueError("Отклик не найден")
+
+        new_response = self.__to_response_model(updated_response, with_user=False, with_job=False)
+        return new_response
+
+    async def delete(self, response_id: int, user_id: int) -> ShortResponseModel:
+        async with self.session() as session:
+            query = (
+                delete(Response).filter_by(id=response_id, user_id=user_id).returning(Response.id)
+            )
             res = await session.execute(query)
             response_from_db = res.scalars().first()
 
             if not response_from_db:
                 raise ValueError("Отклик не найден")
 
-            update_data = {
-                key: value for key, value in response_update_dto.dict().items() if value is not None
-            }
-            query = update(Response).filter_by(id=id).values(**update_data).returning(Response)
-            result = await session.execute(query)
-            obj = result.scalars().first()
-            if not obj:
-                raise ValueError("Отклик не обновлен")
-            return obj
-
-        new_response = self.__to_response_model(response_from_db, with_user=False, with_job=False)
-        return new_response
-
-    async def delete(self, id: int):
-        async with self.session() as session:
-            query = delete(Response).filter_by(id=id).returning(Response.id)
-            res = await session.execute(query)
-            response_from_db = res.scalars().first()
-
-            if not response_from_db:
-                raise ValueError("Вакансия не найдена")
-
-        return {"deleted_response_id": id}
+        return ShortResponseModel(id=response_id)
 
     @staticmethod
     def __to_response_model(

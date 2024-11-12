@@ -21,3 +21,11 @@ class ResponseCreateSchema(BaseModel):
     user_id: int
     job_id: int
     message: str
+
+
+class ShortResponseCreateSchema(BaseModel):
+    message: str
+
+
+class DeleteResponseSchema(BaseModel):
+    id: int
