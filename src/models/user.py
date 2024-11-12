@@ -14,3 +14,11 @@ class User:
 
     jobs: list[Job] = field(default_factory=list)
     responses: list[Response] = field(default_factory=list)
+
+
+@dataclass
+class ShortUser:
+    id: int
+    name: str
+    email: str
+    is_company: bool
