@@ -39,17 +39,22 @@ class UserRepository(IRepositoryAsync):
 
             res = await session.execute(query)
             user_from_db = res.scalars().first()
-
+        if not user_from_db:
+            raise ValueError("User not found")
         user_model = self.__to_user_model(
             user_from_db=user_from_db, include_relations=include_relations
         )
         return user_model
 
     async def retrieve_many(
-        self, limit: int = 100, skip: int = 0, include_relations: bool = False
+        self,
+        limit: int = 100,
+        skip: int = 0,
+        include_relations: bool = False,
+        show_companies: bool = False,
     ) -> list[UserModel]:
         async with self.session() as session:
-            query = select(User).limit(limit).offset(skip)
+            query = select(User).filter_by(is_company=show_companies).limit(limit).offset(skip)
             if include_relations:
                 query = query.options(selectinload(User.jobs)).options(selectinload(User.responses))
 
