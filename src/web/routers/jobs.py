@@ -1,3 +1,4 @@
+import logging
 from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends
 
@@ -13,6 +14,8 @@ from web.schemas.job import JobCreateSchema, JobSchema, JobUpdateSchema
 from web.schemas.pagination import PaginationSchema
 
 jobs_router = APIRouter(prefix="/jobs", tags=["jobs"])
+
+logger = logging.getLogger()
 
 
 @jobs_router.get("")
