@@ -37,7 +37,7 @@ async def refresh(
     user_repository: UserRepository = Depends(Provide[RepositoriesContainer.user_repository]),
 ):
     cred_exception = HTTPException(
-        status_code=status.HTTP_403_FORBIDDEN, detail="Credentials are not valid"
+        status_code=status.HTTP_403_FORBIDDEN, detail="Учетные данные недействительны"
     )
     payload = decode_token(refresh_token)
     if payload is None:

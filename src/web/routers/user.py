@@ -1,3 +1,4 @@
+import logging
 from dataclasses import asdict
 
 from dependency_injector.wiring import Provide, inject
@@ -9,17 +10,17 @@ from dependencies.containers import RepositoriesContainer
 from models import User
 from repositories import UserRepository
 from tools.security import hash_password
-from web.schemas import UserCreateSchema, UserSchema, UserUpdateSchema
+from web.schemas import PaginationSchema, UserCreateSchema, UserSchema, UserUpdateSchema
 from web.schemas.user_with_jobs_and_responses import UserSchemaWithJobAndResponse
 
 router = APIRouter(prefix="/users", tags=["users"])
+logger = logging.getLogger()
 
 
 @router.get("")
 @inject
 async def read_users(
-    limit: int = 100,
-    skip: int = 0,
+    pagination: PaginationSchema = Depends(),
     current_user: User = Depends(get_current_user),
     user_repository: UserRepository = Depends(Provide[RepositoriesContainer.user_repository]),
 ) -> list[UserSchema]:
@@ -27,18 +28,9 @@ async def read_users(
         show_companies = False
     else:
         show_companies = True
-    users_model = await user_repository.retrieve_many(limit, skip, show_companies)
-
-    # users_schema = []
-    # for model in users_model:
-    #     users_schema.append(
-    #         UserSchema(
-    #             id=model.id,
-    #             name=model.name,
-    #             email=model.email,
-    #             is_company=model.is_company,
-    #         )
-    #     )
+    users_model = await user_repository.retrieve_many(
+        pagination.limit, pagination.skip, show_companies
+    )
     users_schema = [UserSchema(**asdict(user)) for user in users_model]
     return users_schema
 
@@ -58,6 +50,7 @@ async def me(
         user_model = await user_repository.retrieve(include_relations=True, id=current_user.id)
         return UserSchemaWithJobAndResponse(**asdict(user_model))
     except ValueError:
+        logger.warning(f"Ошибка получения данных о своем аккаунте: {current_user.id}")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Пользователь не найден",
@@ -82,6 +75,9 @@ async def read_user(
         )
         return UserSchema(**asdict(user_model))
     except ValueError:
+        logger.warning(
+            f"Ошибка при получении данных о чужом аккаунте: {current_user.id} запрашивал {user_id}"
+        )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Пользователь не найден",
@@ -96,10 +92,13 @@ async def create_user(
 ) -> UserSchema:
     try:
         existing_user = await user_repository.retrieve(email=user_create_dto.email)
-    except ValueError as e:
-        # Пользователя с такой почтой не существует, надо сюда лог добавить
-        print(e.args[0])
+    except ValueError:
+        # Пользователя с такой почтой не существует
+        pass
     else:
+        logger.warning(
+            f"Попытка повторной регистрации пользователя с почтой: {user_create_dto.email}"
+        )
         if existing_user:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -111,6 +110,7 @@ async def create_user(
         )
         return UserSchema(**asdict(user))
     except IntegrityError:
+        logger.warning(f"Ошибка при создании пользователя. email: {user_create_dto.email}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Некорректные данные пользователя",
@@ -124,9 +124,19 @@ async def update_user(
     user_repository: UserRepository = Depends(Provide[RepositoriesContainer.user_repository]),
     current_user: User = Depends(get_current_user),
 ) -> UserSchema:
+    try:
+        existing_user = await user_repository.retrieve(email=user_update_schema.email)
+    except ValueError:
+        logger.warning(f"Не найден пользователь для изменения: {user_update_schema.email}")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Пользователь с такой почтой не найден"
+        )
 
-    existing_user = await user_repository.retrieve(email=user_update_schema.email)
     if existing_user and existing_user.id != current_user.id:
+        logger.warning(
+            f"Попытка изменения другого пользователя: {current_user.id}"
+            f" пытался менять {existing_user.id}"
+        )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Недостаточно прав")
 
     try:
@@ -134,4 +144,5 @@ async def update_user(
         return UserSchema(**asdict(updated_user))
 
     except ValueError:
+        logger.warning(f"Не найден пользователь для изменения: {current_user.id}")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Пользователь не найден")

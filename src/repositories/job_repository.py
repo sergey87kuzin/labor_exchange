@@ -23,8 +23,6 @@ class JobRepository(IRepositoryAsync):
 
             session.add(job)
             await session.commit()
-        if not job.id:
-            raise ValueError("Ошибка создания вакансии")
         return self.__to_job_model(job_from_db=job, include_relations=False)
 
     async def retrieve(self, **kwargs) -> JobModel:

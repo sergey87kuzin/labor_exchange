@@ -1,3 +1,4 @@
+import logging
 from dataclasses import asdict
 from datetime import datetime
 from http import HTTPStatus
@@ -11,16 +12,18 @@ from dependencies.containers import RepositoriesContainer
 from models import Job as ShortJobModel
 from models import User
 from repositories.job_repository import JobRepository
+from web.schemas import PaginationSchema
 from web.schemas.job import JobCreateSchema, JobSchema, JobUpdateSchema
 
 jobs_router = APIRouter(prefix="/jobs", tags=["jobs"])
+
+logger = logging.getLogger()
 
 
 @jobs_router.get("")
 @inject
 async def get_all_jobs(
-    limit: int = 100,
-    skip: int = 0,
+    pagination: PaginationSchema = Depends(),
     salary_from: int = None,
     salary_to: int = None,
     created_at: datetime = None,
@@ -43,7 +46,9 @@ async def get_all_jobs(
     # компания может видеть только свои вакансии
     if current_user and current_user.is_company:
         kwargs["user_id"] = current_user.id
-    jobs_from_db = await job_repository.retrieve_many(limit=limit, skip=skip, **kwargs)
+    jobs_from_db = await job_repository.retrieve_many(
+        limit=pagination.limit, skip=pagination.skip, **kwargs
+    )
     return [JobSchema(**asdict(job)) for job in jobs_from_db]
 
 
@@ -62,6 +67,7 @@ async def get_job_by_id(
         job_model = await job_repository.retrieve(**kwargs)
         return JobSchema(**asdict(job_model))
     except ValueError:
+        logger.warning(f"Пользователь {current_user.id} не получил доступа к вакансии {job_id}")
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,
             detail="Вакансия не найдена",
@@ -80,6 +86,10 @@ async def create_job(
             status_code=HTTPStatus.FORBIDDEN, detail="Только компания может создавать вакансию"
         )
     if job_creation_data.user_id and job_creation_data.user_id != current_user.id:
+        logger.warning(
+            f"Попытка создания вакансии имени чужой компании:{current_user.id}"
+            f" от имени {job_creation_data.user_id}"
+        )
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail="Можно создать вакансию только от имени своей компании",
@@ -88,12 +98,10 @@ async def create_job(
     try:
         job_model = await job_repository.create(job_creation_data)
         return JobSchema(**asdict(job_model))
-    except ValueError as e:
-        raise HTTPException(
-            status_code=HTTPStatus.BAD_REQUEST,
-            detail=e.args[0],
-        )
     except IntegrityError:
+        logger.error(
+            f"Ошибка создания вакансии {job_creation_data.title} пользователем {current_user.id}"
+        )
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail="Ошибка создания вакансии",
@@ -116,8 +124,15 @@ async def update_job(
         job = await job_repository.update(job_id, current_user.id, job_update_data)
         return JobSchema(**asdict(job))
     except IntegrityError:
+        logger.error(
+            f"Ошибка изменения вакансии {job_update_data.title} пользователем {current_user.id}"
+        )
         raise HTTPException(status_code=HTTPStatus.BAD_REQUEST, detail="Ошибка изменения вакансии")
     except ValueError:
+        logger.error(
+            f"Не найдена для изменения пользователем {current_user.id}"
+            f" вакансия {job_update_data.id}"
+        )
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND,
             detail="Вакансия не найдена или открыта другой компанией",
@@ -139,6 +154,7 @@ async def delete_job(
         job = await job_repository.delete(job_id, user_id=current_user.id)
         return ShortJobModel(**asdict(job))
     except ValueError:
+        logger.error(f"Не найдена для удаления пользователем {current_user.id} вакансия {job_id}")
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND, detail="Вакансия для удаления не найдена"
         )

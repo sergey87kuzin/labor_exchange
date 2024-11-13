@@ -1,3 +1,4 @@
+import logging
 from http import HTTPStatus
 
 from dependency_injector.wiring import Provide, inject
@@ -11,6 +12,7 @@ from models import ResponseWithUserAndJob as ResponseModel
 from models import User
 from repositories.job_repository import JobRepository
 from repositories.response_repository import ResponseRepository
+from web.schemas import PaginationSchema
 from web.schemas.response import (
     ResponseCreateSchema,
     ResponseUpdateSchema,
@@ -18,6 +20,8 @@ from web.schemas.response import (
 )
 
 responses_router = APIRouter(prefix="/responses", tags=["responses"])
+
+logger = logging.getLogger()
 
 
 async def get_responses(
@@ -42,8 +46,7 @@ async def get_responses(
 @responses_router.get("")
 @inject
 async def get_response_by_user_id(
-    limit: int = 100,
-    skip: int = 0,
+    pagination: PaginationSchema = Depends(),
     current_user: User = Depends(get_current_user),
     response_repository: ResponseRepository = Depends(
         Provide[RepositoriesContainer.response_repository]
@@ -54,17 +57,26 @@ async def get_response_by_user_id(
             status_code=HTTPStatus.FORBIDDEN,
             detail="Пользовательские отклики невозможны для компаний",
         )
-    return await get_responses(
-        limit=limit, skip=skip, repository=response_repository, user_id=current_user.id
-    )
+    try:
+        return await get_responses(
+            limit=pagination.limit,
+            skip=pagination.skip,
+            repository=response_repository,
+            user_id=current_user.id,
+        )
+    except ValueError as e:
+        logger.warning(e.args[0])
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=e.args[0],
+        )
 
 
 @responses_router.get("/job_id")
 @inject
 async def get_responses_by_job_id(
     job_id: int,
-    limit: int = 100,
-    skip: int = 0,
+    pagination: PaginationSchema = Depends(),
     current_user: User = Depends(get_current_user),
     response_repository: ResponseRepository = Depends(
         Provide[RepositoriesContainer.response_repository]
@@ -77,14 +89,15 @@ async def get_responses_by_job_id(
             detail="Отклики на вакансию просмативает только компания",
         )
     try:
-        await job_repository.retrieve(job_id=job_id, user_id=current_user.id)
+        await job_repository.retrieve(id=job_id, user_id=current_user.id)
     except ValueError as e:
+        logger.warning(e.args[0])
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=e.args[0],
         )
     return await get_responses(
-        limit=limit, skip=skip, repository=response_repository, job_id=job_id
+        limit=pagination.limit, skip=pagination.skip, repository=response_repository, job_id=job_id
     )
 
 
@@ -102,6 +115,9 @@ async def get_response_by_id(
             response_id=response_id, user_id=current_user.id, is_company=current_user.is_company
         )
     except ValueError as e:
+        logger.warning(
+            f"Попытка просмотра чужого отклика: пользователь {current_user.id} отклик {response_id}"
+        )
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=e.args[0],
@@ -123,17 +139,11 @@ async def response_job(
             status_code=HTTPStatus.FORBIDDEN,
             detail="Откликаться на вакансии могут только зарегистрированные соискатели",
         )
-    try:
-        return await response_repository.create(
-            response_to_create=ResponseCreateSchema(
-                message=response_data.message, job_id=job_id, user_id=current_user.id
-            ),
-        )
-    except ValueError as e:
-        raise HTTPException(
-            status_code=HTTPStatus.BAD_REQUEST,
-            detail=e.args[0],
-        )
+    return await response_repository.create(
+        response_to_create=ResponseCreateSchema(
+            message=response_data.message, job_id=job_id, user_id=current_user.id
+        ),
+    )
 
 
 @responses_router.patch("/response_id")
@@ -151,6 +161,9 @@ async def update_response(
             response_id=response_id, user_id=current_user.id, response_update_dto=response_data
         )
     except ValueError as e:
+        logger.warning(
+            f"Отклик {response_id} для редактирования пользователем {current_user.id} не найден"
+        )
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=e.args[0],
@@ -174,6 +187,9 @@ async def delete_response(
     try:
         return await response_repository.delete(response_id=response_id, user_id=current_user.id)
     except ValueError as e:
+        logger.warning(
+            f"Отклик {response_id} для удаления пользователем {current_user.id} не найден"
+        )
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=e.args[0],
