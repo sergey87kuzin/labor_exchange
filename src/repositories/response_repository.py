@@ -23,7 +23,7 @@ class ResponseRepository(IRepositoryAsync):
             response = Response(**response_to_create.dict())
 
             session.add(response)
-            await session.flush()
+            await session.commit()
 
         return self.__to_response_model(response_from_db=response, with_user=False, with_job=False)
 
@@ -146,7 +146,7 @@ class ResponseRepository(IRepositoryAsync):
                 description=response_from_db.job.description,
                 salary_from=response_from_db.job.salary_from,
                 salary_to=response_from_db.job.salary_to,
-                is_active=response_from_db.user.is_active,
+                is_active=response_from_db.job.is_active,
             )
             response_model.job = job
 

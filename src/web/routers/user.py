@@ -10,6 +10,7 @@ from models import User
 from repositories import UserRepository
 from tools.security import hash_password
 from web.schemas import UserCreateSchema, UserSchema, UserUpdateSchema
+from web.schemas.user_with_jobs_and_responses import UserSchemaWithJobAndResponse
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -42,6 +43,27 @@ async def read_users(
     return users_schema
 
 
+@router.get("/me")
+@inject
+async def me(
+    current_user: User = Depends(get_current_user),
+    user_repository: UserRepository = Depends(Provide[RepositoriesContainer.user_repository]),
+) -> UserSchemaWithJobAndResponse:
+    if not current_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Пользователь не авторизован",
+        )
+    try:
+        user_model = await user_repository.retrieve(include_relations=True, id=current_user.id)
+        return UserSchemaWithJobAndResponse(**asdict(user_model))
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Пользователь не найден",
+        )
+
+
 @router.get("/{user_id}")
 @inject
 async def read_user(
@@ -49,6 +71,7 @@ async def read_user(
     current_user: User = Depends(get_current_user),
     user_repository: UserRepository = Depends(Provide[RepositoriesContainer.user_repository]),
 ) -> UserSchema:
+    """Соискатель может посмотреть компанию и наоборот"""
     if current_user and current_user.is_company:
         is_company = False
     else:
@@ -61,7 +84,7 @@ async def read_user(
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
+            detail="Пользователь не найден",
         )
 
 

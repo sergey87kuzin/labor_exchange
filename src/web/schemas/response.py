@@ -2,8 +2,8 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from web.schemas import UserSchema
 from web.schemas.job import JobSchema
+from web.schemas.user import UserSchema
 
 
 class ResponseSchema(BaseModel):
@@ -24,6 +24,11 @@ class ResponseCreateSchema(BaseModel):
 
 
 class ShortResponseCreateSchema(BaseModel):
+    message: str
+
+
+class ResponseForUserSchema(BaseModel):
+    id: int
     message: str
 
 

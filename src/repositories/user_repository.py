@@ -5,9 +5,9 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from interfaces import IRepositoryAsync
-from models import Job as JobModel
-from models import Response as ResponseModel
+from models import ResponseFull as ResponseModel
 from models import User as UserModel
+from models.job import JobFull as JobModel
 from storage.sqlalchemy.tables import User
 from web.schemas import UserCreateSchema, UserUpdateSchema
 
@@ -40,7 +40,7 @@ class UserRepository(IRepositoryAsync):
             res = await session.execute(query)
             user_from_db = res.scalars().first()
         if not user_from_db:
-            raise ValueError("User not found")
+            raise ValueError("Пользователь не найден")
         user_model = self.__to_user_model(
             user_from_db=user_from_db, include_relations=include_relations
         )
@@ -121,10 +121,21 @@ class UserRepository(IRepositoryAsync):
         if user_from_db:
             if include_relations:
                 if user_from_db.is_company:
-                    user_jobs = [JobModel(id=job.id) for job in user_from_db.jobs]
+                    user_jobs = [
+                        JobModel(
+                            id=job.id,
+                            salary_to=job.salary_to,
+                            salary_from=job.salary_from,
+                            title=job.title,
+                            description=job.description,
+                            is_active=job.is_active,
+                        )
+                        for job in user_from_db.jobs
+                    ]
                 else:
                     user_responses = [
-                        ResponseModel(id=response.id) for response in user_from_db.responses
+                        ResponseModel(id=response.id, message=response.message)
+                        for response in user_from_db.responses
                     ]
 
             user_model = UserModel(

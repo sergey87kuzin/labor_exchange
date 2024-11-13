@@ -38,6 +38,8 @@ def decode_token(token: str):
         )
     except jwt.JWSError:
         return None
+    except jwt.ExpiredSignatureError:
+        return None
     return encoded_jwt
 
 

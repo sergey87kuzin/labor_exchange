@@ -1,4 +1,3 @@
-from dataclasses import asdict
 from http import HTTPStatus
 
 from dependency_injector.wiring import Provide, inject
@@ -28,7 +27,7 @@ async def get_responses(
         response_models = await repository.retrieve_many(
             limit=limit, skip=skip, user_id=user_id, job_id=job_id
         )
-        return [ResponseModel(**asdict(response)) for response in response_models]
+        return response_models
     except ValueError as e:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,

@@ -10,9 +10,6 @@ class UserSchema(BaseModel):
     email: EmailStr
     is_company: bool
 
-    jobs: Optional[list[int]]
-    responses: Optional[list[int]]
-
 
 class UserUpdateSchema(BaseModel):
     name: Optional[str] = None
