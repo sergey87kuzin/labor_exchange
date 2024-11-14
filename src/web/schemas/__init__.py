@@ -5,6 +5,5 @@ from .response import (  # noqa
     ResponseCreateSchema,
     ResponseSchema,
     ResponseUpdateSchema,
-    ShortResponseCreateSchema,
 )
 from .user import UserCreateSchema, UserSchema, UserUpdateSchema  # noqa
