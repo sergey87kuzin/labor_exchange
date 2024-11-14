@@ -71,7 +71,7 @@ class JobRepository(IRepositoryAsync):
 
     async def update(self, job_id: int, user_id: int, job_update_dto: JobUpdateSchema) -> JobModel:
         async with self.session() as session:
-            query = select(Job).filter_by(id=job_id, user_id=user_id).exists()
+            query = select(Job).filter_by(id=job_id, user_id=user_id).limit(1)
             res = await session.execute(query)
             job_from_db = res.scalars().first()
 
