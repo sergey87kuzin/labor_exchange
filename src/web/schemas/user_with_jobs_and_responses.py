@@ -2,7 +2,7 @@ from typing import Optional
 
 from pydantic import BaseModel, EmailStr
 
-from web.schemas.job import ShortJobSchema
+from web.schemas.job import JobSchema
 from web.schemas.response import ResponseForUserSchema
 
 
@@ -12,5 +12,5 @@ class UserSchemaWithJobAndResponse(BaseModel):
     email: EmailStr
     is_company: bool
 
-    jobs: Optional[list[ShortJobSchema]]
+    jobs: Optional[list[JobSchema]]
     responses: Optional[list[ResponseForUserSchema]]
