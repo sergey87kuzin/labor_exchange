@@ -76,7 +76,9 @@ class UserService:
             show_companies = False
         else:
             show_companies = True
-        users_model = await self.user_repository.retrieve_many(limit, skip, show_companies)
+        users_model = await self.user_repository.retrieve_many(
+            limit=limit, skip=skip, show_companies=show_companies
+        )
 
         users_schema = [UserSchema(**asdict(user)) for user in users_model]
         return users_schema

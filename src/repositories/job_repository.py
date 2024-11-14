@@ -6,8 +6,8 @@ from sqlalchemy.orm import Session, joinedload
 
 from interfaces import IRepositoryAsync
 from models.job_with_user import JobToRetrieve as JobModel
-from models.user import User as UserModel
 from storage.sqlalchemy.tables import Job
+from tools.to_model import ToModel
 from web.schemas.filter import FilterSchema
 from web.schemas.job import JobCreateSchema, JobUpdateSchema
 
@@ -23,7 +23,7 @@ class JobRepository(IRepositoryAsync):
 
             session.add(job)
             await session.commit()
-        return self.__to_job_model(job_from_db=job, include_relations=False)
+        return ToModel().to_job_model(job_from_db=job, include_relations=False)
 
     async def retrieve(self, **kwargs) -> JobModel:
         async with self.session() as session:
@@ -32,8 +32,7 @@ class JobRepository(IRepositoryAsync):
             res = await session.execute(query)
             job_from_db = res.scalars().first()
 
-        job_model = self.__to_job_model(job_from_db=job_from_db, include_relations=True)
-        return job_model
+        return ToModel().to_job_model(job_from_db=job_from_db, include_relations=True)
 
     async def retrieve_many(
         self,
@@ -58,7 +57,7 @@ class JobRepository(IRepositoryAsync):
 
         jobs_model = []
         for job in jobs_from_db:
-            model = self.__to_job_model(job_from_db=job, include_relations=True)
+            model = ToModel().to_job_model(job_from_db=job, include_relations=True)
             jobs_model.append(model)
 
         return jobs_model
@@ -81,8 +80,7 @@ class JobRepository(IRepositoryAsync):
             result = await session.execute(query)
             updated_job = result.scalars().first()
 
-        new_job = self.__to_job_model(updated_job, include_relations=False)
-        return new_job
+        return ToModel().to_job_model(job_from_db=updated_job, include_relations=False)
 
     async def delete(self, job_id: int, user_id: int) -> JobModel | None:
         async with self.session() as session:
@@ -95,30 +93,4 @@ class JobRepository(IRepositoryAsync):
             else:
                 return None
 
-        return self.__to_job_model(job_from_db, include_relations=False)
-
-    @staticmethod
-    def __to_job_model(job_from_db: Job, include_relations: bool = False) -> JobModel | None:
-        if not job_from_db:
-            return None
-
-        job_model = JobModel(
-            id=job_from_db.id,
-            title=job_from_db.title,
-            description=job_from_db.description,
-            salary_from=job_from_db.salary_from,
-            salary_to=job_from_db.salary_to,
-            is_active=job_from_db.is_active,
-            created_at=job_from_db.created_at,
-            user=None,
-        )
-        if include_relations:
-            user = UserModel(
-                id=job_from_db.id,
-                name=job_from_db.user.name,
-                email=job_from_db.user.email,
-                is_company=job_from_db.user.is_company,
-            )
-            job_model.user = user
-
-        return job_model
+        return ToModel().to_job_model(job_from_db=job_from_db, include_relations=False)

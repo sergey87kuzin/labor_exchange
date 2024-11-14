@@ -5,10 +5,9 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from interfaces import IRepositoryAsync
-from models import Response as ResponseModel
 from models import User as UserModel
-from models.job import Job as JobModel
 from storage.sqlalchemy.tables import User
+from tools.to_model import ToModel
 from web.schemas import UserCreateSchema, UserUpdateSchema
 
 
@@ -29,7 +28,7 @@ class UserRepository(IRepositoryAsync):
             await session.commit()
             await session.refresh(user)
 
-        return self.__to_user_model(user_from_db=user, include_relations=False)
+        return ToModel().to_user_model(user_from_db=user, include_relations=False)
 
     async def retrieve(self, include_relations: bool = False, **kwargs) -> UserModel | None:
         async with self.session() as session:
@@ -41,10 +40,9 @@ class UserRepository(IRepositoryAsync):
             user_from_db = res.scalars().first()
         if not user_from_db:
             return None
-        user_model = self.__to_user_model(
+        return ToModel().to_user_model(
             user_from_db=user_from_db, include_relations=include_relations
         )
-        return user_model
 
     async def retrieve_many(
         self,
@@ -63,7 +61,7 @@ class UserRepository(IRepositoryAsync):
 
         users_model = []
         for user in users_from_db:
-            model = self.__to_user_model(user_from_db=user, include_relations=include_relations)
+            model = ToModel().to_user_model(user_from_db=user, include_relations=include_relations)
             users_model.append(model)
 
         return users_model
@@ -95,7 +93,7 @@ class UserRepository(IRepositoryAsync):
             await session.commit()
             await session.refresh(user_from_db)
 
-        new_user = self.__to_user_model(user_from_db, include_relations=False)
+        new_user = ToModel().to_user_model(user_from_db=user_from_db, include_relations=False)
         return new_user
 
     async def delete(self, user_id: int) -> UserModel | None:
@@ -110,42 +108,42 @@ class UserRepository(IRepositoryAsync):
             else:
                 return None
 
-        return self.__to_user_model(user_from_db, include_relations=False)
+        return ToModel().to_user_model(user_from_db=user_from_db, include_relations=False)
 
-    @staticmethod
-    def __to_user_model(user_from_db: User, include_relations: bool = False) -> UserModel:
-        user_jobs = []
-        user_responses = []
-        user_model = None
-
-        if user_from_db:
-            if include_relations:
-                if user_from_db.is_company:
-                    user_jobs = [
-                        JobModel(
-                            id=job.id,
-                            salary_to=job.salary_to,
-                            salary_from=job.salary_from,
-                            title=job.title,
-                            description=job.description,
-                            is_active=job.is_active,
-                        )
-                        for job in user_from_db.jobs
-                    ]
-                else:
-                    user_responses = [
-                        ResponseModel(id=response.id, message=response.message)
-                        for response in user_from_db.responses
-                    ]
-
-            user_model = UserModel(
-                id=user_from_db.id,
-                name=user_from_db.name,
-                email=user_from_db.email,
-                hashed_password=user_from_db.hashed_password,
-                is_company=user_from_db.is_company,
-                jobs=user_jobs,
-                responses=user_responses,
-            )
-
-        return user_model
+    # @staticmethod
+    # def __to_user_model(user_from_db: User, include_relations: bool = False) -> UserModel:
+    #     user_jobs = []
+    #     user_responses = []
+    #     user_model = None
+    #
+    #     if user_from_db:
+    #         if include_relations:
+    #             if user_from_db.is_company:
+    #                 user_jobs = [
+    #                     JobModel(
+    #                         id=job.id,
+    #                         salary_to=job.salary_to,
+    #                         salary_from=job.salary_from,
+    #                         title=job.title,
+    #                         description=job.description,
+    #                         is_active=job.is_active,
+    #                     )
+    #                     for job in user_from_db.jobs
+    #                 ]
+    #             else:
+    #                 user_responses = [
+    #                     ResponseModel(id=response.id, message=response.message)
+    #                     for response in user_from_db.responses
+    #                 ]
+    #
+    #         user_model = UserModel(
+    #             id=user_from_db.id,
+    #             name=user_from_db.name,
+    #             email=user_from_db.email,
+    #             hashed_password=user_from_db.hashed_password,
+    #             is_company=user_from_db.is_company,
+    #             jobs=user_jobs,
+    #             responses=user_responses,
+    #         )
+    #
+    #     return user_model
