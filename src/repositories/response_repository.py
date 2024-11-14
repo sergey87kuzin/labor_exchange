@@ -6,9 +6,8 @@ from sqlalchemy.orm import Session, joinedload
 
 from interfaces import IRepositoryAsync
 from models import ResponseWithUserAndJob as ResponseModel
-from models.job import Job as JobModel
-from models.user import User as UserModel
 from storage.sqlalchemy.tables import Response
+from tools.to_model import ToModel
 from web.schemas.response import ResponseCreateSchema, ResponseUpdateSchema
 
 
@@ -24,7 +23,9 @@ class ResponseRepository(IRepositoryAsync):
             session.add(response)
             await session.commit()
 
-        return self.__to_response_model(response_from_db=response, with_user=False, with_job=False)
+        return ToModel().to_response_model(
+            response_from_db=response, with_user=False, with_job=False
+        )
 
     async def retrieve(
         self, response_id: int, user_id: int, is_company: bool = False
@@ -42,10 +43,9 @@ class ResponseRepository(IRepositoryAsync):
             response_from_db = res.scalars().first()
         if not response_from_db:
             return None
-        response_model = self.__to_response_model(
+        return ToModel().to_response_model(
             response_from_db=response_from_db, with_user=True, with_job=True
         )
-        return response_model
 
     async def retrieve_many(
         self, limit: int = 100, skip: int = 0, job_id: int = 0, user_id: int = 0
@@ -68,9 +68,10 @@ class ResponseRepository(IRepositoryAsync):
             with_job = True
         responses_model = []
         for response in responses_from_db:
-            model = self.__to_response_model(
+            model = ToModel().to_response_model(
                 response_from_db=response, with_user=with_user, with_job=with_job
             )
+
             responses_model.append(model)
 
         return responses_model
@@ -94,8 +95,9 @@ class ResponseRepository(IRepositoryAsync):
             if not updated_response:
                 raise ValueError("Отклик не найден")
 
-        new_response = self.__to_response_model(updated_response, with_user=False, with_job=False)
-        return new_response
+        return ToModel().to_response_model(
+            response_from_db=updated_response, with_user=False, with_job=False
+        )
 
     async def delete(self, response_id: int, user_id: int) -> ResponseModel | None:
         async with self.session() as session:
@@ -106,40 +108,6 @@ class ResponseRepository(IRepositoryAsync):
             if not response_from_db:
                 return None
 
-        return self.__to_response_model(response_from_db, with_user=False, with_job=False)
-
-    @staticmethod
-    def __to_response_model(
-        response_from_db: Response, with_user: bool = False, with_job: bool = False
-    ) -> ResponseModel | None:
-        if not response_from_db:
-            return None
-
-        response_model = ResponseModel(
-            id=response_from_db.id,
-            message=response_from_db.message,
-            user_id=response_from_db.user_id,
-            user=None,
-            job=None,
+        return ToModel().to_response_model(
+            response_from_db=response_from_db, with_user=False, with_job=False
         )
-        if with_user:
-            user = UserModel(
-                id=response_from_db.id,
-                name=response_from_db.user.name,
-                email=response_from_db.user.email,
-                is_company=response_from_db.user.is_company,
-            )
-            response_model.user = user
-        if with_job:
-            job = JobModel(
-                id=response_from_db.job.id,
-                title=response_from_db.job.title,
-                description=response_from_db.job.description,
-                salary_from=response_from_db.job.salary_from,
-                salary_to=response_from_db.job.salary_to,
-                is_active=response_from_db.job.is_active,
-                user_id=response_from_db.job.user_id,
-            )
-            response_model.job = job
-
-        return response_model
