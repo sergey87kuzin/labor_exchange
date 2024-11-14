@@ -9,7 +9,7 @@ class UserFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = User
 
-    id = factory.Sequence(lambda n: n)
+    id = factory.Sequence(lambda n: n + 1)
     name = factory.Faker("pystr")
     email = factory.Faker("email")
     hashed_password = factory.Faker("password")
