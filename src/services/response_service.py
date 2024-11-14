@@ -14,10 +14,8 @@ class ResponseService(IService):
     def __init__(self, response_repository: ResponseRepository):
         self.response_repository = response_repository
 
-    async def retrieve_object(self, response_id: int, current_user: User) -> ResponseSchema | None:
-        response_from_db = await self.response_repository.retrieve(
-            response_id=response_id, user_id=current_user.id, is_company=current_user.is_company
-        )
+    async def get_response(self, response_id: int, current_user: User) -> ResponseSchema | None:
+        response_from_db = await self.response_repository.retrieve(response_id=response_id)
         if not response_from_db:
             return None
         if current_user.is_company and response_from_db.job.user_id != current_user.id:

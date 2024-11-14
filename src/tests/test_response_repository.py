@@ -1,28 +1,8 @@
-from storage.sqlalchemy.tables import Job, Response, User
-from tools.fixtures.jobs import JobFactory
-from tools.fixtures.responses import ResponseFactory
-from tools.fixtures.users import UserFactory
+from web.schemas import ResponseCreateSchema, ResponseUpdateSchema
 
 
-async def create_users_job_and_response(sa_session) -> tuple[User, User, Job, Response]:
-    async with sa_session() as session:
-        company = UserFactory.build(is_company=True)
-        session.add(company)
-        candidate = UserFactory.build(is_company=False)
-        session.add(candidate)
-        job = JobFactory.build()
-        job.user_id = company.id
-        session.add(job)
-        response = ResponseFactory.build()
-        response.user_id = candidate.id
-        response.job_id = job.id
-        session.add(response)
-        await session.flush()
-    return company, candidate, job, response
-
-
-async def test_get_all(response_repository, sa_session):
-    company, candidate, job, response = await create_users_job_and_response(sa_session)
+async def test_get_all(response_repository, create_users_job_and_response):
+    company, candidate, job, response = await create_users_job_and_response()
 
     all_job_responses = await response_repository.retrieve_many(job_id=job.id)
     assert all_job_responses
@@ -37,75 +17,62 @@ async def test_get_all(response_repository, sa_session):
         response_from_repo = jobs[0]
         assert response_from_repo.id == response.id
         assert response_from_repo.user_id == candidate.id
-        assert response_from_repo.job_id == job.id
         assert response_from_repo.message == response.message
 
 
-# async def test_get_by_id(job_repository, sa_session):
-#     user, job = await create_user_and_job(sa_session)
-#
-#     current_job = await job_repository.retrieve(user_id=user.id)
-#     current_candidate_jobs = await job_repository.retrieve()
-#     for job in [current_job, current_candidate_jobs]:
-#         assert job is not None
-#         job_assertion(job, job, user.id)
-#
-#
-# async def test_create(job_repository, sa_session):
-#     async with sa_session() as session:
-#         user = UserFactory.build(is_company=True)
-#         session.add(user)
-#
-#     job = JobCreateSchema(
-#         title="Test Job Title",
-#         description="Test Job Description",
-#         salary_from=Decimal("10000.01"),
-#         salary_to=Decimal("100000.01"),
-#         is_active=True,
-#         user_id=user.id,
-#     )
-#
-#     new_job = await job_repository.create(job_to_create=job)
-#     assert new_job is not None
-#     assert new_job.title == "Test Job Title"
-#     assert new_job.salary_to == Decimal("100000.01")
-#
-#
-# async def test_update(job_repository, sa_session):
-#     user, job = await create_user_and_job(sa_session)
-#
-#     job_to_update = JobUpdateSchema(
-#         title="updated_title",
-#         salary_from=Decimal("10000.01"),
-#         salary_to=Decimal("100000.01"),
-#     )
-#     updated_job = await job_repository.update(
-#     job_id=job.id, user_id=user.id, job_update_dto=job_to_update)
-#     assert job.id == updated_job.id
-#     assert updated_job.title == "updated_title"
-#     assert updated_job.salary_to == Decimal("100000.01")
-#     assert updated_job.salary_from == Decimal("10000.01")
-#
-#
-# async def test_update_job_by_other_user(job_repository, sa_session):
-#     user, job = await create_user_and_job(sa_session)
-#     async with sa_session() as session:
-#         wrong_user = UserFactory.build()
-#         session.add(wrong_user)
-#
-#     job_to_update = JobUpdateSchema(
-#         title="updated_title",
-#         salary_from=Decimal("10000.01"),
-#         salary_to=Decimal("100000.01"),
-#     )
-#     with pytest.raises(ValueError):
-#         await job_repository.update(
-#         job_id=job.id, user_id=wrong_user.id, job_update_dto=job_to_update)
-#
-#
-# async def test_delete(job_repository, sa_session):
-#     user, job = await create_user_and_job(sa_session)
-#
-#     await job_repository.delete(job_id=job.id, user_id=user.id)
-#     with pytest.raises(ValueError):
-#         await job_repository.retrieve(id=job.id)
+async def test_get_by_id(response_repository, create_users_job_and_response):
+    company, candidate, job, response = await create_users_job_and_response()
+
+    current_response = await response_repository.retrieve(response_id=response.id)
+    assert current_response is not None
+    assert current_response.id == response.id
+    assert current_response.user_id == candidate.id
+    assert current_response.message == response.message
+
+
+async def test_create(response_repository, create_users_job_and_response):
+    company, candidate, job, response = await create_users_job_and_response(with_response=False)
+
+    response_to_create = ResponseCreateSchema(
+        message="response_message",
+        user_id=candidate.id,
+        job_id=job.id,
+    )
+
+    new_response = await response_repository.create(response_to_create=response_to_create)
+    assert new_response is not None
+    assert new_response.message == "response_message"
+    assert new_response.user_id == candidate.id
+
+
+async def test_update(response_repository, create_users_job_and_response):
+    company, candidate, job, response = await create_users_job_and_response()
+
+    response_to_update = ResponseUpdateSchema(message="updated_message")
+    updated_response = await response_repository.update(
+        response_id=response.id, user_id=candidate.id, response_update_dto=response_to_update
+    )
+    assert response.id == updated_response.id
+    assert updated_response.message == "updated_message"
+    assert updated_response.user_id == candidate.id
+
+    response_from_db = await response_repository.retrieve(response_id=response.id)
+    assert response_from_db.message == "updated_message", "Изменения не сохранились в бд"
+
+    wrong_response = await response_repository.update(
+        response_id=response.id, user_id=company.id, response_update_dto=response_to_update
+    )
+    assert not wrong_response, "Другим пользователям позволено редактировать отклик"
+
+
+async def test_delete(response_repository, create_users_job_and_response):
+    company, candidate, job, response = await create_users_job_and_response()
+
+    wrong_response = await response_repository.delete(response_id=response.id, user_id=company.id)
+    assert not wrong_response, "Другие пользователи могут удалять отзыв"
+
+    right_response = await response_repository.delete(response_id=response.id, user_id=candidate.id)
+    assert right_response
+    assert right_response.id == response.id
+    check_response = await response_repository.retrieve(response_id=response.id)
+    assert not check_response

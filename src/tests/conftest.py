@@ -13,7 +13,7 @@ from sqlalchemy.orm import sessionmaker
 
 from config import DBSettings
 from main import app
-from repositories import JobRepository, UserRepository
+from repositories import JobRepository, ResponseRepository, UserRepository
 from tools.fixtures.jobs import JobFactory
 from tools.fixtures.responses import ResponseFactory
 from tools.fixtures.users import UserFactory
@@ -68,6 +68,28 @@ async def sa_session():
         await engine.dispose()
 
 
+@pytest.fixture(scope="function")
+async def create_users_job_and_response(sa_session):
+    async def creation(with_response=True):
+        async with sa_session() as session:
+            company = UserFactory.build(is_company=True)
+            session.add(company)
+            candidate = UserFactory.build(is_company=False)
+            session.add(candidate)
+            job = JobFactory.build()
+            job.user_id = company.id
+            session.add(job)
+            response = ResponseFactory.build()
+            if with_response:
+                response.user_id = candidate.id
+                response.job_id = job.id
+                session.add(response)
+            await session.flush()
+        return company, candidate, job, response
+
+    return creation
+
+
 @pytest_asyncio.fixture(scope="function")
 async def user_repository(sa_session):
     repository = UserRepository(session=sa_session)
@@ -77,6 +99,12 @@ async def user_repository(sa_session):
 @pytest_asyncio.fixture(scope="function")
 async def job_repository(sa_session):
     repository = JobRepository(session=sa_session)
+    yield repository
+
+
+@pytest_asyncio.fixture(scope="function")
+async def response_repository(sa_session):
+    repository = ResponseRepository(session=sa_session)
     yield repository
 
 
