@@ -1,11 +1,10 @@
 from decimal import Decimal
 
-import pytest
-
 from storage.sqlalchemy.tables import Job, User
 from tools.fixtures.jobs import JobFactory
 from tools.fixtures.users import UserFactory
 from web.schemas import JobCreateSchema, JobUpdateSchema
+from web.schemas.filter import FilterSchema
 
 
 async def create_user_and_job(sa_session) -> tuple[User, Job]:
@@ -33,11 +32,13 @@ def job_assertion(current_job: Job, expected_job: Job, user_id: int) -> None:
 async def test_get_all(job_repository, sa_session):
     user, job = await create_user_and_job(sa_session)
 
-    all_jobs = await job_repository.retrieve_many(user_id=user.id)
+    job_filter = FilterSchema(company_id=user.id)
+    all_jobs = await job_repository.retrieve_many(job_filter)
     assert all_jobs
     assert len(all_jobs) == 1, "Kомпания не видит собственные вакансии"
 
-    all_candidate_jobs = await job_repository.retrieve_many()
+    job_filter.company_id = None
+    all_candidate_jobs = await job_repository.retrieve_many(job_filter)
     assert all_candidate_jobs
     assert len(all_candidate_jobs) == 1, "Пользователь не видит вакансии"
 
@@ -105,15 +106,15 @@ async def test_update_job_by_other_user(job_repository, sa_session):
         salary_from=Decimal("10000.01"),
         salary_to=Decimal("100000.01"),
     )
-    with pytest.raises(ValueError):
-        await job_repository.update(
-            job_id=job.id, user_id=wrong_user.id, job_update_dto=job_to_update
-        )
+    updated_job = await job_repository.update(
+        job_id=job.id, user_id=wrong_user.id, job_update_dto=job_to_update
+    )
+    assert not updated_job
 
 
 async def test_delete(job_repository, sa_session):
     user, job = await create_user_and_job(sa_session)
 
     await job_repository.delete(job_id=job.id, user_id=user.id)
-    with pytest.raises(ValueError):
-        await job_repository.retrieve(id=job.id)
+    deleted_job = await job_repository.retrieve(id=job.id)
+    assert not deleted_job

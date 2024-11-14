@@ -1,6 +1,6 @@
 import factory
 
-from models import Response
+from storage.sqlalchemy.tables import Response
 
 
 class ResponseFactory(factory.alchemy.SQLAlchemyModelFactory):

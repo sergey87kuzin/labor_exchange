@@ -98,7 +98,7 @@ class UserRepository(IRepositoryAsync):
 
     async def delete(self, user_id: int) -> UserModel | None:
         async with self.session() as session:
-            query = select(User).filter_by(id=id).limit(1)
+            query = select(User).filter_by(id=user_id).limit(1)
             res = await session.execute(query)
             user_from_db = res.scalars().first()
 
