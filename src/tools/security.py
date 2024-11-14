@@ -56,4 +56,7 @@ class JWTBearer(HTTPBearer):
                 raise exp
             return credentials.credentials
         else:
-            raise exp
+            if self.auto_error:
+                raise exp
+            else:
+                return None

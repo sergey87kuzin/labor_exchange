@@ -3,7 +3,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from dependencies.containers import RepositoriesContainer
 from repositories import UserRepository
-from tools.security import create_token, decode_token, verify_password
+from tools.get_user_from_token import get_user_from_token
+from tools.security import create_token, verify_password
 from web.schemas import LoginSchema, TokenSchema
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -36,20 +37,9 @@ async def refresh(
     refresh_token: str,
     user_repository: UserRepository = Depends(Provide[RepositoriesContainer.user_repository]),
 ):
-    cred_exception = HTTPException(
-        status_code=status.HTTP_403_FORBIDDEN, detail="Учетные данные недействительны"
-    )
-    payload = decode_token(refresh_token)
-    if payload is None:
-        raise cred_exception
-    email: str = payload.get("sub")
-    if email is None:
-        raise cred_exception
-    user = await user_repository.retrieve(email=email, include_relations=False)
-    if user is None:
-        raise cred_exception
+    user = await get_user_from_token(refresh_token, user_repository)
     return TokenSchema(
         access_token=create_token({"sub": user.email}),
-        refresh_token=refresh_token,
+        refresh_token=create_token({"sub": user.email}, refresh=True),
         token_type="Bearer",
     )

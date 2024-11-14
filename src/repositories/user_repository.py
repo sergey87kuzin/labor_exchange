@@ -5,9 +5,9 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from interfaces import IRepositoryAsync
-from models import ResponseFull as ResponseModel
+from models import Response as ResponseModel
 from models import User as UserModel
-from models.job import JobFull as JobModel
+from models.job import Job as JobModel
 from storage.sqlalchemy.tables import User
 from web.schemas import UserCreateSchema, UserUpdateSchema
 
@@ -31,7 +31,7 @@ class UserRepository(IRepositoryAsync):
 
         return self.__to_user_model(user_from_db=user, include_relations=False)
 
-    async def retrieve(self, include_relations: bool = False, **kwargs) -> UserModel:
+    async def retrieve(self, include_relations: bool = False, **kwargs) -> UserModel | None:
         async with self.session() as session:
             query = select(User).filter_by(**kwargs).limit(1)
             if include_relations:
@@ -40,7 +40,7 @@ class UserRepository(IRepositoryAsync):
             res = await session.execute(query)
             user_from_db = res.scalars().first()
         if not user_from_db:
-            raise ValueError("Пользователь не найден")
+            return None
         user_model = self.__to_user_model(
             user_from_db=user_from_db, include_relations=include_relations
         )
@@ -68,14 +68,14 @@ class UserRepository(IRepositoryAsync):
 
         return users_model
 
-    async def update(self, id: int, user_update_dto: UserUpdateSchema) -> UserModel:
+    async def update(self, id: int, user_update_dto: UserUpdateSchema) -> UserModel | None:
         async with self.session() as session:
             query = select(User).filter_by(id=id).limit(1)
             res = await session.execute(query)
             user_from_db = res.scalars().first()
 
             if not user_from_db:
-                raise ValueError("Пользователь не найден")
+                return None
 
             name = user_update_dto.name if user_update_dto.name is not None else user_from_db.name
             email = (
@@ -98,7 +98,7 @@ class UserRepository(IRepositoryAsync):
         new_user = self.__to_user_model(user_from_db, include_relations=False)
         return new_user
 
-    async def delete(self, id: int):
+    async def delete(self, user_id: int) -> UserModel | None:
         async with self.session() as session:
             query = select(User).filter_by(id=id).limit(1)
             res = await session.execute(query)
@@ -108,7 +108,7 @@ class UserRepository(IRepositoryAsync):
                 await session.delete(user_from_db)
                 await session.commit()
             else:
-                raise ValueError("Пользователь не найден")
+                return None
 
         return self.__to_user_model(user_from_db, include_relations=False)
 

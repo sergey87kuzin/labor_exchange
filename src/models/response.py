@@ -1,12 +1,8 @@
 from dataclasses import dataclass
+from typing import Optional
 
 
 @dataclass
 class Response:
     id: int
-
-
-@dataclass
-class ResponseFull:
-    id: int
-    message: str
+    message: Optional[str]

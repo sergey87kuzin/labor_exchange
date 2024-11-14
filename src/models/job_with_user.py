@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
 
-from models.user import ShortUser
+from models.user import User
 
 
 @dataclass
@@ -15,4 +15,4 @@ class JobToRetrieve:
     salary_to: decimal.Decimal
     is_active: bool
     created_at: datetime
-    user: Optional[ShortUser]
+    user: Optional[User]

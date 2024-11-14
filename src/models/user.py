@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from typing import Optional
 
 from models.job import Job
 from models.response import Response
@@ -9,16 +10,8 @@ class User:
     id: int
     name: str
     email: str
-    hashed_password: str
     is_company: bool
+    hashed_password: Optional[str | None] = None
 
-    jobs: list[Job] = field(default_factory=list)
-    responses: list[Response] = field(default_factory=list)
-
-
-@dataclass
-class ShortUser:
-    id: int
-    name: str
-    email: str
-    is_company: bool
+    jobs: Optional[list[Job]] = field(default_factory=list)
+    responses: Optional[list[Response]] = field(default_factory=list)
