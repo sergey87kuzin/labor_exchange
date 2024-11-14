@@ -3,7 +3,7 @@ from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError
 
 from repositories import UserRepository
-from storage.sqlalchemy.tables import Job
+from tools.fixtures.jobs import JobFactory
 from tools.fixtures.users import UserFactory
 from tools.security import hash_password
 from web.schemas import UserCreateSchema, UserUpdateSchema
@@ -47,12 +47,14 @@ async def test_get_all(
 async def test_get_all_with_relations(user_repository, sa_session):
     async with sa_session() as session:
         user = UserFactory.build(is_company=True)
-        job = Job(user_id=user.id)
+        job = JobFactory.build(user_id=user.id)
         session.add(user)
         session.add(job)
         await session.flush()
 
-    all_users = await user_repository.retrieve_many(include_relations=True)
+    all_users = await user_repository.retrieve_many(
+        include_relations=True, show_companies=user.is_company
+    )
     assert all_users
     assert len(all_users) == 1
 
@@ -143,6 +145,6 @@ async def test_delete(user_repository, sa_session):
         session.add(user)
         await session.flush()
 
-    await user_repository.delete(id=user.id)
+    await user_repository.delete(user_id=user.id)
     res = await user_repository.retrieve(id=user.id)
     assert not res

@@ -27,9 +27,7 @@ class ResponseRepository(IRepositoryAsync):
             response_from_db=response, with_user=False, with_job=False
         )
 
-    async def retrieve(
-        self, response_id: int, user_id: int, is_company: bool = False
-    ) -> ResponseModel | None:
+    async def retrieve(self, response_id: int) -> ResponseModel | None:
         async with self.session() as session:
             query = (
                 select(Response)
