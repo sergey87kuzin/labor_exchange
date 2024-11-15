@@ -111,6 +111,7 @@ async def response_repository(sa_session):
 # регистрация фабрик
 @pytest_asyncio.fixture(scope="function", autouse=True)
 def setup_factories(sa_session: AsyncSession) -> None:
+
     UserFactory.session = sa_session
     JobFactory.session = sa_session
     ResponseFactory.session = sa_session
