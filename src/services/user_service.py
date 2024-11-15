@@ -7,7 +7,6 @@ from storage.sqlalchemy.tables import User
 from tools.get_user_from_token import get_user_from_token
 from tools.security import hash_password
 from web.schemas import UserCreateSchema, UserSchema, UserUpdateSchema
-from web.schemas.user_with_jobs_and_responses import UserSchemaWithJobAndResponse
 
 
 class UserService:
@@ -42,11 +41,11 @@ class UserService:
             return None
         return UserSchema(**asdict(user_model))
 
-    async def get_me(self, current_user) -> UserSchemaWithJobAndResponse | None:
+    async def get_me(self, current_user) -> UserSchema | None:
         user_model = await self.user_repository.retrieve(include_relations=True, id=current_user.id)
         if not user_model:
             return None
-        return UserSchemaWithJobAndResponse(**asdict(user_model))
+        return UserSchema(**asdict(user_model))
 
     async def update_user(
         self, user_update_schema: UserUpdateSchema, current_user: User

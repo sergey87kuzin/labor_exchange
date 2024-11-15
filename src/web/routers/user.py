@@ -9,7 +9,6 @@ from services.user_service import UserService
 from tools.security import JWTBearer
 from web.schemas import UserCreateSchema, UserSchema, UserUpdateSchema
 from web.schemas.pagination import PaginationSchema
-from web.schemas.user_with_jobs_and_responses import UserSchemaWithJobAndResponse
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -31,7 +30,7 @@ async def read_users(
 async def me(
     current_user: User = Depends(get_current_user),
     user_repository: UserRepository = Depends(Provide[RepositoriesContainer.user_repository]),
-) -> UserSchemaWithJobAndResponse | None:
+) -> UserSchema | None:
     return await UserService(user_repository).get_me(current_user)
 
 

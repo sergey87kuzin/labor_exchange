@@ -10,6 +10,9 @@ class UserSchema(BaseModel):
     email: EmailStr
     is_company: bool
 
+    jobs: Optional[list["JobSchema"]]  # noqa
+    responses: Optional[list["ResponseSchema"]]  # noqa
+
 
 class UserUpdateSchema(BaseModel):
     name: Optional[str] = None

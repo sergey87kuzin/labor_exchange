@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import datetime
 from decimal import Decimal
 from typing import Optional
 
@@ -11,4 +12,6 @@ class Job:
     salary_from: Decimal
     salary_to: Decimal
     is_active: bool
-    user_id: Optional[int] = None
+    created_at: Optional[datetime | None] = None
+    user_id: Optional[int | None] = None
+    user: Optional["User"] = None  # noqa

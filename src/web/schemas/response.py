@@ -23,10 +23,5 @@ class ResponseCreateSchema(BaseModel):
     message: str
 
 
-class ResponseForUserSchema(BaseModel):
-    id: int
-    message: str
-
-
 class DeleteResponseSchema(BaseModel):
     id: int

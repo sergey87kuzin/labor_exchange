@@ -5,7 +5,7 @@ from sqlalchemy import select, update
 from sqlalchemy.orm import Session, joinedload
 
 from interfaces import IRepositoryAsync
-from models.job_with_user import JobToRetrieve as JobModel
+from models.job import Job as JobModel
 from storage.sqlalchemy.tables import Job
 from tools.to_model import ToModel
 from web.schemas.filter import FilterSchema

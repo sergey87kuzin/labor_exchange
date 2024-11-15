@@ -1,8 +1,6 @@
 from models import Response as ResponseModel
-from models import ResponseWithUserAndJob
 from models import User as UserModel
 from models.job import Job as JobModel
-from models.job_with_user import JobToRetrieve
 from storage.sqlalchemy.tables import Job, Response, User
 
 
@@ -46,11 +44,11 @@ class ToModel:
         return user_model
 
     @staticmethod
-    def to_job_model(job_from_db: Job, include_relations: bool = False) -> JobToRetrieve | None:
+    def to_job_model(job_from_db: Job, include_relations: bool = False) -> JobModel | None:
         if not job_from_db:
             return None
 
-        job_model = JobToRetrieve(
+        job_model = JobModel(
             id=job_from_db.id,
             title=job_from_db.title,
             description=job_from_db.description,
@@ -74,11 +72,11 @@ class ToModel:
     @staticmethod
     def to_response_model(
         response_from_db: Response, with_user: bool = False, with_job: bool = False
-    ) -> ResponseWithUserAndJob | None:
+    ) -> ResponseModel | None:
         if not response_from_db:
             return None
 
-        response_model = ResponseWithUserAndJob(
+        response_model = ResponseModel(
             id=response_from_db.id,
             message=response_from_db.message,
             user_id=response_from_db.user_id,

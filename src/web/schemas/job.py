@@ -39,11 +39,3 @@ class JobCreateSchema(JobBaseSchema):
     title: str
     description: str
     is_active: Optional[bool] = None
-
-
-class ShortJobSchema(JobBaseSchema):
-    id: Optional[int] = None
-    title: str
-    description: str
-    is_active: bool = False
-    created_at: Optional[datetime] = None

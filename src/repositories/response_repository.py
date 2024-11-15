@@ -5,7 +5,7 @@ from sqlalchemy import delete, select, update
 from sqlalchemy.orm import Session, joinedload
 
 from interfaces import IRepositoryAsync
-from models import ResponseWithUserAndJob as ResponseModel
+from models import Response as ResponseModel
 from storage.sqlalchemy.tables import Response
 from tools.to_model import ToModel
 from web.schemas.response import ResponseCreateSchema, ResponseUpdateSchema
