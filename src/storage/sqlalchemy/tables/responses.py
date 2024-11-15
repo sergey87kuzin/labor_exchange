@@ -14,7 +14,6 @@ class Response(Base):
     job_id: Mapped[int] = mapped_column(ForeignKey("jobs.id"), comment="Идентификатор вакансии")
 
     message: Mapped[str] = mapped_column(comment="Сопроводительное письмо")
-    # добавьте ваши колонки сюда
 
     user: Mapped["User"] = relationship(back_populates="responses")  # noqa
     job: Mapped["Job"] = relationship(back_populates="responses")  # noqa

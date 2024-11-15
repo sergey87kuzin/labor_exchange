@@ -14,10 +14,7 @@ class Job(Base):
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id"), comment="Идентификатор пользователя"
     )
-    # pre-commit не пропускает такую запись( Возможно ли что-то с этим сделать, не маскируя ошибку?
-    user: Mapped["User"] = relationship(  # noqa
-        primaryjoin="User.id == Job.user_id", back_populates="jobs"
-    )
+
     title: Mapped[str] = mapped_column(String(100), comment="Название вакансии")
     description: Mapped[str] = mapped_column(comment="Описание вакансии")
     salary_from: Mapped[decimal] = mapped_column(
@@ -30,8 +27,6 @@ class Job(Base):
     created_at: Mapped[datetime] = mapped_column(
         comment="Дата создания записи", default=datetime.utcnow
     )
-
-    # добавьте ваши колонки сюда
 
     user: Mapped["User"] = relationship(back_populates="jobs")  # noqa
     responses: Mapped["Response"] = relationship(back_populates="job")  # noqa
