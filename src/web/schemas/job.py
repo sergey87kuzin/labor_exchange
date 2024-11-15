@@ -15,7 +15,7 @@ class JobBaseSchema(BaseModel):
     @model_validator(mode="after")
     def salary_match(self) -> Self:
         if self.salary_from > self.salary_to:
-            raise ValueError("salary from has to be less or equal then salary to")
+            raise ValueError("Зарплата от не должна превышать зарплату до")
         return self
 
 

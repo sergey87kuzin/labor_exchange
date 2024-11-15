@@ -32,5 +32,5 @@ class UserCreateSchema(BaseModel):
         pw1 = self.password
         pw2 = self.password2
         if pw1 is not None and pw2 is not None and pw1 != pw2:
-            raise ValueError("passwords do not match")
+            raise ValueError("Пароли не совпадают")
         return self

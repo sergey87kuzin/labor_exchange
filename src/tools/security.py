@@ -49,7 +49,9 @@ class JWTBearer(HTTPBearer):
 
     async def __call__(self, request: Request):
         credentials = await super(JWTBearer, self).__call__(request)
-        exp = HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid auth token")
+        exp = HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Неверный токен авторизации"
+        )
         if credentials:
             token = decode_token(credentials.credentials)
             if token is None:

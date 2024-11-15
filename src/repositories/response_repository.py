@@ -78,7 +78,7 @@ class ResponseRepository(IRepositoryAsync):
 
     async def update(
         self, response_id: int, user_id: int, response_update_dto: ResponseUpdateSchema
-    ) -> ResponseModel:
+    ) -> ResponseModel | None:
         async with self.session() as session:
 
             update_data = {
@@ -93,7 +93,7 @@ class ResponseRepository(IRepositoryAsync):
             result = await session.execute(query)
             updated_response = result.scalars().first()
             if not updated_response:
-                raise ValueError("Отклик не найден")
+                return None
 
         return ToModel().to_response_model(
             response_from_db=updated_response, with_user=False, with_job=False
