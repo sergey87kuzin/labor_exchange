@@ -23,7 +23,7 @@ async def get_response_by_user_id(
     ),
     job_repository: JobRepository = Depends(Provide[RepositoriesContainer.job_repository]),
 ) -> list[ResponseSchema]:
-    return await ResponseService(response_repository).get_response_list(
+    return await ResponseService(response_repository).retrieve_many_objects(
         limit=pagination.limit,
         skip=pagination.skip,
         current_user=current_user,
@@ -42,7 +42,7 @@ async def get_responses_by_job_id(
     ),
     job_repository: JobRepository = Depends(Provide[RepositoriesContainer.job_repository]),
 ) -> list[ResponseSchema]:
-    return await ResponseService(response_repository).get_response_list(
+    return await ResponseService(response_repository).retrieve_many_objects(
         limit=pagination.limit,
         skip=pagination.skip,
         current_user=current_user,
@@ -60,7 +60,7 @@ async def get_response_by_id(
         Provide[RepositoriesContainer.response_repository]
     ),
 ) -> ResponseSchema | None:
-    return await ResponseService(response_repository).get_response(
+    return await ResponseService(response_repository).retrieve_object(
         response_id=response_id, current_user=current_user
     )
 
@@ -75,7 +75,7 @@ async def response_job(
         Provide[RepositoriesContainer.response_repository]
     ),
 ) -> ResponseSchema:
-    return await ResponseService(response_repository).create_response(
+    return await ResponseService(response_repository).create_object(
         job_id=job_id,
         current_user=current_user,
         response_to_create=response_data,
@@ -92,7 +92,7 @@ async def update_response(
         Provide[RepositoriesContainer.response_repository]
     ),
 ) -> ResponseSchema | None:
-    return await ResponseService(response_repository).update_response(
+    return await ResponseService(response_repository).update_object(
         response_id=response_id,
         current_user=current_user,
         response_to_update=response_data,
@@ -108,6 +108,6 @@ async def delete_response(
         Provide[RepositoriesContainer.response_repository]
     ),
 ) -> ResponseSchema | None:
-    return await ResponseService(response_repository).delete_response(
+    return await ResponseService(response_repository).delete_object(
         response_id=response_id, current_user=current_user
     )

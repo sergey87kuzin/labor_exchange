@@ -20,7 +20,7 @@ async def read_users(
     token: str = Depends(JWTBearer(auto_error=False)),
     user_repository: UserRepository = Depends(Provide[RepositoriesContainer.user_repository]),
 ) -> list[UserSchema]:
-    return await UserService(user_repository).get_all_users(
+    return await UserService(user_repository).retrieve_many_objects(
         pagination.limit, pagination.skip, token
     )
 
@@ -41,7 +41,7 @@ async def read_user(
     token: str = Depends(JWTBearer(auto_error=False)),
     user_repository: UserRepository = Depends(Provide[RepositoriesContainer.user_repository]),
 ) -> UserSchema | None:
-    return await UserService(user_repository).get_user(user_id, token)
+    return await UserService(user_repository).retrieve_object(user_id, token)
 
 
 @router.post("")
@@ -50,7 +50,7 @@ async def create_user(
     user_create_dto: UserCreateSchema,
     user_repository: UserRepository = Depends(Provide[RepositoriesContainer.user_repository]),
 ) -> UserSchema | None:
-    return await UserService(user_repository).create_user(user_create_dto)
+    return await UserService(user_repository).create_object(user_create_dto)
 
 
 @router.patch("")
@@ -60,7 +60,7 @@ async def update_user(
     user_repository: UserRepository = Depends(Provide[RepositoriesContainer.user_repository]),
     current_user: User = Depends(get_current_user),
 ) -> UserSchema | None:
-    return await UserService(user_repository).update_user(user_update_schema, current_user)
+    return await UserService(user_repository).update_object(user_update_schema, current_user)
 
 
 @router.delete("")
@@ -69,4 +69,4 @@ async def delete_user(
     user_repository: UserRepository = Depends(Provide[RepositoriesContainer.user_repository]),
     current_user: User = Depends(get_current_user),
 ):
-    return await UserService(user_repository).delete_user(current_user)
+    return await UserService(user_repository).delete_object(current_user)

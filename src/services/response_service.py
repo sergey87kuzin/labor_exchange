@@ -3,17 +3,18 @@ from http import HTTPStatus
 
 from fastapi import HTTPException
 
+from interfaces import IService
 from models import User
 from repositories.job_repository import JobRepository
 from repositories.response_repository import ResponseRepository
 from web.schemas import ResponseCreateSchema, ResponseSchema, ResponseUpdateSchema
 
 
-class ResponseService:
+class ResponseService(IService):
     def __init__(self, response_repository: ResponseRepository):
         self.response_repository = response_repository
 
-    async def get_response(self, response_id: int, current_user: User) -> ResponseSchema | None:
+    async def retrieve_object(self, response_id: int, current_user: User) -> ResponseSchema | None:
         response_from_db = await self.response_repository.retrieve(
             response_id=response_id, user_id=current_user.id, is_company=current_user.is_company
         )
@@ -25,7 +26,7 @@ class ResponseService:
             return None
         return ResponseSchema(**asdict(response_from_db))
 
-    async def get_response_list(
+    async def retrieve_many_objects(
         self,
         limit: int,
         skip: int,
@@ -59,7 +60,7 @@ class ResponseService:
             )
         return [ResponseSchema(**asdict(response)) for response in response_models]
 
-    async def create_response(
+    async def create_object(
         self, job_id: int, current_user: User, response_to_create: ResponseUpdateSchema
     ) -> ResponseSchema | None:
         if current_user.is_company:
@@ -76,7 +77,7 @@ class ResponseService:
             return None
         return ResponseSchema(**asdict(response_from_db))
 
-    async def update_response(
+    async def update_object(
         self, response_id: int, current_user: User, response_to_update: ResponseUpdateSchema
     ) -> ResponseSchema | None:
         response_from_db = await self.response_repository.update(
@@ -86,7 +87,7 @@ class ResponseService:
             return None
         return ResponseSchema(**asdict(response_from_db))
 
-    async def delete_response(
+    async def delete_object(
         self,
         response_id: int,
         current_user: User,

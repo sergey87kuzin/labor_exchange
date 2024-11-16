@@ -3,6 +3,7 @@ from http import HTTPStatus
 
 from fastapi import HTTPException
 
+from interfaces import IService
 from repositories import UserRepository
 from repositories.job_repository import JobRepository
 from storage.sqlalchemy.tables import User
@@ -12,11 +13,13 @@ from web.schemas.filter import FilterSchema
 from web.schemas.pagination import PaginationSchema
 
 
-class JobService:
+class JobService(IService):
     def __init__(self, job_repository: JobRepository):
         self.job_repository = job_repository
 
-    async def create_job(self, current_user: User, job_creation_data: JobCreateSchema) -> JobSchema:
+    async def create_object(
+        self, current_user: User, job_creation_data: JobCreateSchema
+    ) -> JobSchema:
         if not current_user or not current_user.is_company:
             raise HTTPException(
                 status_code=HTTPStatus.FORBIDDEN, detail="Только компания может создавать вакансию"
@@ -30,7 +33,7 @@ class JobService:
         job_model = await self.job_repository.create(job_creation_data)
         return JobSchema(**asdict(job_model))
 
-    async def jobs_list(
+    async def retrieve_many_objects(
         self,
         pagination: PaginationSchema,
         jobs_filter: FilterSchema,
@@ -49,7 +52,7 @@ class JobService:
         )
         return [JobSchema(**asdict(job)) for job in jobs_from_db]
 
-    async def job_details(
+    async def retrieve_object(
         self, job_id: int, user_repository: UserRepository, token: str = None
     ) -> JobSchema | None:
         if token:
@@ -65,7 +68,7 @@ class JobService:
             return None
         return JobSchema(**asdict(job_model))
 
-    async def job_delete(self, job_id: int, current_user: User) -> JobSchema | None:
+    async def delete_object(self, job_id: int, current_user: User) -> JobSchema | None:
         if not current_user or not current_user.is_company:
             raise HTTPException(
                 status_code=HTTPStatus.FORBIDDEN, detail="Удалять вакансии могут только компании"
@@ -75,7 +78,7 @@ class JobService:
             return None
         return JobSchema(**asdict(job))
 
-    async def job_update(
+    async def update_object(
         self, job_id: int, current_user: User, job_update_data: JobUpdateSchema
     ) -> JobSchema | None:
         if not current_user or not current_user.is_company:

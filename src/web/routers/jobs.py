@@ -24,7 +24,7 @@ async def get_all_jobs(
     token: str = Depends(JWTBearer(auto_error=False)),
     job_repository: JobRepository = Depends(Provide[RepositoriesContainer.job_repository]),
 ) -> list[JobSchema]:
-    return await JobService(job_repository).jobs_list(
+    return await JobService(job_repository).retrieve_many_objects(
         pagination, jobs_filter, user_repository, token
     )
 
@@ -37,7 +37,7 @@ async def get_job_by_id(
     token: str = Depends(JWTBearer(auto_error=False)),
     job_repository: JobRepository = Depends(Provide[RepositoriesContainer.job_repository]),
 ) -> JobSchema | None:
-    return await JobService(job_repository).job_details(job_id, user_repository, token)
+    return await JobService(job_repository).retrieve_object(job_id, user_repository, token)
 
 
 @jobs_router.post("")
@@ -47,7 +47,7 @@ async def create_job(
     current_user: User = Depends(get_current_user),
     job_repository: JobRepository = Depends(Provide[RepositoriesContainer.job_repository]),
 ) -> JobSchema:
-    return await JobService(job_repository).create_job(current_user, job_creation_data)
+    return await JobService(job_repository).create_object(current_user, job_creation_data)
 
 
 @jobs_router.patch("/job_id")
@@ -58,7 +58,7 @@ async def update_job(
     current_user: User = Depends(get_current_user),
     job_repository: JobRepository = Depends(Provide[RepositoriesContainer.job_repository]),
 ) -> JobSchema | None:
-    return await JobService(job_repository).job_update(
+    return await JobService(job_repository).update_object(
         job_id=job_id, current_user=current_user, job_update_data=job_update_data
     )
 
@@ -70,4 +70,4 @@ async def delete_job(
     current_user: User = Depends(get_current_user),
     job_repository: JobRepository = Depends(Provide[RepositoriesContainer.job_repository]),
 ) -> JobSchema | None:
-    return await JobService(job_repository).job_delete(job_id=job_id, current_user=current_user)
+    return await JobService(job_repository).delete_object(job_id=job_id, current_user=current_user)

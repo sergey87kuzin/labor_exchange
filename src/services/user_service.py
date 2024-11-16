@@ -2,6 +2,7 @@ from dataclasses import asdict
 
 from fastapi import HTTPException, status
 
+from interfaces import IService
 from repositories import UserRepository
 from storage.sqlalchemy.tables import User
 from tools.get_user_from_token import get_user_from_token
@@ -9,11 +10,11 @@ from tools.security import hash_password
 from web.schemas import UserCreateSchema, UserSchema, UserUpdateSchema
 
 
-class UserService:
+class UserService(IService):
     def __init__(self, user_repository: UserRepository):
         self.user_repository = user_repository
 
-    async def create_user(self, user_create_dto: UserCreateSchema) -> UserSchema | None:
+    async def create_object(self, user_create_dto: UserCreateSchema) -> UserSchema | None:
         existing_user = await self.user_repository.retrieve(email=user_create_dto.email)
         if existing_user:
             raise HTTPException(
@@ -25,7 +26,7 @@ class UserService:
         )
         return UserSchema(**asdict(user))
 
-    async def get_user(self, user_id: int, token: str = None) -> UserSchema | None:
+    async def retrieve_object(self, user_id: int, token: str = None) -> UserSchema | None:
         """Соискатель может посмотреть компанию и наоборот"""
         current_user = None
         if token:
@@ -47,7 +48,7 @@ class UserService:
             return None
         return UserSchema(**asdict(user_model))
 
-    async def update_user(
+    async def update_object(
         self, user_update_schema: UserUpdateSchema, current_user: User
     ) -> UserSchema | None:
         existing_user = await self.user_repository.retrieve(email=user_update_schema.email)
@@ -61,13 +62,15 @@ class UserService:
             return None
         return UserSchema(**asdict(updated_user))
 
-    async def delete_user(self, current_user) -> UserSchema | None:
+    async def delete_object(self, current_user) -> UserSchema | None:
         user_from_db = await self.user_repository.delete(current_user.id)
         if not user_from_db:
             return None
         return UserSchema(**asdict(user_from_db))
 
-    async def get_all_users(self, limit: int, skip: int, token: str = None) -> list[UserSchema]:
+    async def retrieve_many_objects(
+        self, limit: int, skip: int, token: str = None
+    ) -> list[UserSchema]:
         current_user = None
         if token:
             current_user = await get_user_from_token(token, self.user_repository)
