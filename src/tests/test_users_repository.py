@@ -71,7 +71,7 @@ async def test_get_by_id(user_repository, sa_session):
     async with sa_session() as session:
         user = UserFactory.build()
         session.add(user)
-        session.flush()
+        await session.flush()
 
     current_user = await user_repository.retrieve(id=user.id)
     assert current_user is not None
@@ -115,7 +115,7 @@ async def test_update(user_repository, sa_session):
     async with sa_session() as session:
         user = UserFactory.build()
         session.add(user)
-        session.flush()
+        await session.flush()
 
     user_update_dto = UserUpdateSchema(name="updated_name")
     updated_user = await user_repository.update(id=user.id, user_update_dto=user_update_dto)
@@ -130,7 +130,7 @@ async def test_update_email_from_other_user(user_repository, sa_session):
         user2 = UserFactory.build()
         session.add(user)
         session.add(user2)
-        session.flush()
+        await session.flush()
 
     user_update_dto = UserUpdateSchema(email=user.email)
 

@@ -85,7 +85,7 @@ class ToModel:
         )
         if with_user:
             user = UserModel(
-                id=response_from_db.id,
+                id=response_from_db.user.id,
                 name=response_from_db.user.name,
                 email=response_from_db.user.email,
                 is_company=response_from_db.user.is_company,

@@ -18,7 +18,7 @@ class ResponseRepository(IRepositoryAsync):
     async def create(self, response_to_create: ResponseCreateSchema) -> ResponseModel:
         async with self.session() as session:
 
-            response = Response(**response_to_create.dict())
+            response = Response(**response_to_create.model_dump())
 
             session.add(response)
             await session.commit()
@@ -80,7 +80,9 @@ class ResponseRepository(IRepositoryAsync):
         async with self.session() as session:
 
             update_data = {
-                key: value for key, value in response_update_dto.dict().items() if value is not None
+                key: value
+                for key, value in response_update_dto.model_dump().items()
+                if value is not None
             }
             query = (
                 update(Response)

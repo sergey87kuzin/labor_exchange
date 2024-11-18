@@ -1,21 +1,9 @@
 from decimal import Decimal
 
-from storage.sqlalchemy.tables import Job, User
-from tools.fixtures.jobs import JobFactory
+from storage.sqlalchemy.tables import Job
 from tools.fixtures.users import UserFactory
 from web.schemas import JobCreateSchema, JobUpdateSchema
 from web.schemas.filter import FilterSchema
-
-
-async def create_user_and_job(sa_session) -> tuple[User, Job]:
-    async with sa_session() as session:
-        user = UserFactory.build(is_company=True)
-        session.add(user)
-        job = JobFactory.build()
-        job.user_id = user.id
-        session.add(job)
-        await session.flush()
-    return user, job
 
 
 def job_assertion(current_job: Job, expected_job: Job, user_id: int) -> None:
@@ -29,8 +17,8 @@ def job_assertion(current_job: Job, expected_job: Job, user_id: int) -> None:
     assert current_job.user.id == user_id
 
 
-async def test_get_all(job_repository, sa_session):
-    user, job = await create_user_and_job(sa_session)
+async def test_get_all(job_repository, create_user_and_job):
+    user, job = create_user_and_job
 
     job_filter = FilterSchema(company_id=user.id)
     all_jobs = await job_repository.retrieve_many(job_filter)
@@ -48,8 +36,8 @@ async def test_get_all(job_repository, sa_session):
         job_assertion(job_from_repo, job, user.id)
 
 
-async def test_get_by_id(job_repository, sa_session):
-    user, job = await create_user_and_job(sa_session)
+async def test_get_by_id(job_repository, create_user_and_job):
+    user, job = create_user_and_job
 
     current_job = await job_repository.retrieve(user_id=user.id)
     current_candidate_jobs = await job_repository.retrieve()
@@ -78,8 +66,8 @@ async def test_create(job_repository, sa_session):
     assert new_job.salary_to == Decimal("100000.01")
 
 
-async def test_update(job_repository, sa_session):
-    user, job = await create_user_and_job(sa_session)
+async def test_update(job_repository, create_user_and_job):
+    user, job = create_user_and_job
 
     job_to_update = JobUpdateSchema(
         title="updated_title",
@@ -95,8 +83,8 @@ async def test_update(job_repository, sa_session):
     assert updated_job.salary_from == Decimal("10000.01")
 
 
-async def test_update_job_by_other_user(job_repository, sa_session):
-    user, job = await create_user_and_job(sa_session)
+async def test_update_job_by_other_user(job_repository, sa_session, create_user_and_job):
+    user, job = create_user_and_job
     async with sa_session() as session:
         wrong_user = UserFactory.build()
         session.add(wrong_user)
@@ -112,8 +100,8 @@ async def test_update_job_by_other_user(job_repository, sa_session):
     assert not updated_job
 
 
-async def test_delete(job_repository, sa_session):
-    user, job = await create_user_and_job(sa_session)
+async def test_delete(job_repository, create_user_and_job):
+    user, job = create_user_and_job
 
     await job_repository.delete(job_id=job.id, user_id=user.id)
     deleted_job = await job_repository.retrieve(id=job.id)

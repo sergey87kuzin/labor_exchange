@@ -1,0 +1,18 @@
+[run]
+source = .
+omit =
+    *fixtures*
+    *tests*
+    *__init__.py
+    *settings*
+    *migrations*
+    *logs*
+
+[report]
+omit =
+    *fixtures*
+    *tests*
+    *__init__.py
+    *settings*
+    *migrations*
+    *logs*

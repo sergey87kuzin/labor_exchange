@@ -14,7 +14,7 @@ class ResponseService(IService):
     def __init__(self, response_repository: ResponseRepository):
         self.response_repository = response_repository
 
-    async def get_response(self, response_id: int, current_user: User) -> ResponseSchema | None:
+    async def retrieve_object(self, response_id: int, current_user: User) -> ResponseSchema | None:
         response_from_db = await self.response_repository.retrieve(response_id=response_id)
         if not response_from_db:
             return None
@@ -47,7 +47,7 @@ class ResponseService(IService):
             if not checked_job:
                 raise HTTPException(
                     status_code=HTTPStatus.FORBIDDEN,
-                    detail="Можно просматривать только свои выкансии",
+                    detail="Можно просматривать только свои отклики",
                 )
             response_models = await self.response_repository.retrieve_many(
                 limit=limit, skip=skip, job_id=job_id

@@ -69,6 +69,45 @@ async def sa_session():
 
 
 @pytest.fixture(scope="function")
+async def create_candidate_and_company(sa_session):
+    async with sa_session() as session:
+        company = UserFactory.build(is_company=True)
+        session.add(company)
+        candidate = UserFactory.build(is_company=False)
+        session.add(candidate)
+        await session.flush()
+    return candidate, company
+
+
+@pytest.fixture(scope="function")
+async def create_user_and_job(sa_session):
+    async with sa_session() as session:
+        user = UserFactory.build(is_company=True)
+        session.add(user)
+        job = JobFactory.build()
+        job.user_id = user.id
+        session.add(job)
+        await session.flush()
+    return user, job
+
+
+@pytest.fixture(scope="function")
+async def create_two_companies_candidate_and_job(sa_session):
+    async with sa_session() as session:
+        right_company = UserFactory.build(is_company=True)
+        session.add(right_company)
+        wrong_company = UserFactory.build(is_company=True)
+        session.add(wrong_company)
+        candidate = UserFactory.build(is_company=False)
+        session.add(candidate)
+        job = JobFactory.build()
+        job.user_id = right_company.id
+        session.add(job)
+        await session.flush()
+    return right_company, wrong_company, candidate, job
+
+
+@pytest.fixture(scope="function")
 async def create_users_job_and_response(sa_session):
     async def creation(with_response=True):
         async with sa_session() as session:
