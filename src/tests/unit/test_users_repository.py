@@ -3,39 +3,58 @@ from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError
 
 from repositories import UserRepository
-from storage.sqlalchemy.tables import Job
+from tools.fixtures.jobs import JobFactory
 from tools.fixtures.users import UserFactory
 from tools.security import hash_password
 from web.schemas import UserCreateSchema, UserUpdateSchema
 
 
+@pytest.mark.parametrize(
+    "is_company,show_companies,output_count,error_text",
+    [
+        (True, True, 1, "Компания не создана, или не показывается"),
+        (False, False, 1, "Соискатель не создан или не показывается"),
+        (True, False, 0, "Создана компания, но показывается как соискатель"),
+        (False, True, 0, "Создан соискатель, но показывается как компания"),
+    ],
+)
 @pytest.mark.asyncio
-async def test_get_all(user_repository, sa_session):
+async def test_get_all(
+    is_company: bool,
+    show_companies: bool,
+    output_count: int,
+    error_text: str,
+    user_repository,
+    sa_session,
+):
     async with sa_session() as session:
-        user = UserFactory.build()
+        user = UserFactory.build(is_company=is_company)
         session.add(user)
-        session.flush()
+        await session.flush()
 
-    all_users = await user_repository.retrieve_many()
-    assert all_users
-    assert len(all_users) == 1
+    all_users = await user_repository.retrieve_many(show_companies=show_companies)
+    assert len(all_users) == output_count, error_text
 
-    user_from_repo = all_users[0]
-    assert user_from_repo.id == user.id
-    assert user_from_repo.email == user.email
-    assert user_from_repo.name == user.name
+    if output_count > 0:
+        assert all_users
+        user_from_repo = all_users[0]
+        assert user_from_repo.id == user.id
+        assert user_from_repo.email == user.email
+        assert user_from_repo.name == user.name
 
 
 @pytest.mark.asyncio
 async def test_get_all_with_relations(user_repository, sa_session):
     async with sa_session() as session:
         user = UserFactory.build(is_company=True)
-        job = Job(user_id=user.id)
+        job = JobFactory.build(user_id=user.id)
         session.add(user)
         session.add(job)
-        session.flush()
+        await session.flush()
 
-    all_users = await user_repository.retrieve_many(include_relations=True)
+    all_users = await user_repository.retrieve_many(
+        include_relations=True, show_companies=user.is_company
+    )
     assert all_users
     assert len(all_users) == 1
 
@@ -52,7 +71,7 @@ async def test_get_by_id(user_repository, sa_session):
     async with sa_session() as session:
         user = UserFactory.build()
         session.add(user)
-        session.flush()
+        await session.flush()
 
     current_user = await user_repository.retrieve(id=user.id)
     assert current_user is not None
@@ -96,7 +115,7 @@ async def test_update(user_repository, sa_session):
     async with sa_session() as session:
         user = UserFactory.build()
         session.add(user)
-        session.flush()
+        await session.flush()
 
     user_update_dto = UserUpdateSchema(name="updated_name")
     updated_user = await user_repository.update(id=user.id, user_update_dto=user_update_dto)
@@ -111,7 +130,7 @@ async def test_update_email_from_other_user(user_repository, sa_session):
         user2 = UserFactory.build()
         session.add(user)
         session.add(user2)
-        session.flush()
+        await session.flush()
 
     user_update_dto = UserUpdateSchema(email=user.email)
 
@@ -124,8 +143,8 @@ async def test_delete(user_repository, sa_session):
     async with sa_session() as session:
         user = UserFactory.build()
         session.add(user)
-        session.flush()
+        await session.flush()
 
-    await user_repository.delete(id=user.id)
+    await user_repository.delete(user_id=user.id)
     res = await user_repository.retrieve(id=user.id)
     assert not res
