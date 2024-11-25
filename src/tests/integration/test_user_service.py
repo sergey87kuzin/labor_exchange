@@ -2,7 +2,7 @@ import pytest
 from fastapi import HTTPException
 
 from services.user_service import UserService
-from tools.fixtures.users import UserFactory
+from tools.factories.users import UserFactory
 from tools.security import create_token
 from web.schemas import UserCreateSchema, UserUpdateSchema
 
@@ -13,6 +13,7 @@ def assert_user(new_user, existing_user):
     assert new_user.is_company == existing_user.is_company
 
 
+@pytest.mark.asyncio
 async def test_user_service_fail_creation(user_repository, sa_session):
     async with sa_session() as session:
         user = UserFactory.build(email="already_exists@email.ru")
@@ -31,6 +32,7 @@ async def test_user_service_fail_creation(user_repository, sa_session):
     assert e_info.value.detail == "Пользователь уже существует"
 
 
+@pytest.mark.asyncio
 async def test_user_service_success_creation(user_repository, sa_session):
     async with sa_session() as session:
         user = UserFactory.build(email="already_exists@email.ru")
@@ -51,6 +53,7 @@ async def test_user_service_success_creation(user_repository, sa_session):
     assert_user(user_from_db, new_user)
 
 
+@pytest.mark.asyncio
 async def test_user_service_failed_update(user_repository, create_candidate_and_company):
     candidate, company = create_candidate_and_company
 
@@ -60,6 +63,7 @@ async def test_user_service_failed_update(user_repository, create_candidate_and_
     assert e_info.value.detail == "Недостаточно прав"
 
 
+@pytest.mark.asyncio
 async def test_user_service_success_update(user_repository, sa_session):
     async with sa_session() as session:
         user = UserFactory.build(email="user@email.ru")
@@ -74,6 +78,7 @@ async def test_user_service_success_update(user_repository, sa_session):
     assert_user(user_from_db, updated_user)
 
 
+@pytest.mark.asyncio
 async def test_user_service_failed_retrieve(user_repository, sa_session):
     async with sa_session() as session:
         company = UserFactory.build(is_company=True)
@@ -98,6 +103,7 @@ async def test_user_service_failed_retrieve(user_repository, sa_session):
         assert not result
 
 
+@pytest.mark.asyncio
 async def test_user_service_success_retrieve(user_repository, create_candidate_and_company):
     candidate, company = create_candidate_and_company
     company_token = create_token({"sub": company.email})
@@ -113,6 +119,7 @@ async def test_user_service_success_retrieve(user_repository, create_candidate_a
         assert_user(result, user)
 
 
+@pytest.mark.asyncio
 async def test_user_service_me(user_repository, sa_session):
     async with sa_session() as session:
         user = UserFactory.build()
@@ -123,6 +130,7 @@ async def test_user_service_me(user_repository, sa_session):
     assert_user(me, user)
 
 
+@pytest.mark.asyncio
 async def test_user_service_retrieve_many(user_repository, create_candidate_and_company):
     candidate, company = create_candidate_and_company
     company_token = create_token({"sub": company.email})
@@ -140,6 +148,7 @@ async def test_user_service_retrieve_many(user_repository, create_candidate_and_
         assert_user(users_from_db[0], user)
 
 
+@pytest.mark.asyncio
 async def test_user_service_delete(user_repository, sa_session):
     async with sa_session() as session:
         user = UserFactory.build()

@@ -6,6 +6,7 @@ from unittest.mock import MagicMock
 
 import pytest
 import pytest_asyncio
+from dependency_injector import providers
 from fastapi.testclient import TestClient
 from sqlalchemy import inspect
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -14,9 +15,19 @@ from sqlalchemy.orm import sessionmaker
 from config import DBSettings
 from main import app
 from repositories import JobRepository, ResponseRepository, UserRepository
-from tools.fixtures.jobs import JobFactory
-from tools.fixtures.responses import ResponseFactory
-from tools.fixtures.users import UserFactory
+from storage.sqlalchemy.client import SqlAlchemyAsync
+from tests.fixtures import (  # noqa
+    create_candidate_and_company,
+    create_job,
+    create_response,
+    create_two_companies_candidate_and_job,
+    create_user_and_job,
+    create_users,
+    create_users_job_and_response,
+)
+from tools.factories.jobs import JobFactory
+from tools.factories.responses import ResponseFactory
+from tools.factories.users import UserFactory
 
 env_file_name = ".env." + os.environ.get("STAGE", "test")
 env_file_path = Path(__file__).parent.parent.resolve() / env_file_name
@@ -25,6 +36,12 @@ settings = DBSettings(_env_file=env_file_path)
 
 @pytest.fixture()
 def client_app():
+    app.container.db.override(
+        providers.Factory(
+            SqlAlchemyAsync,
+            pg_settings=settings,
+        ),
+    )
     client = TestClient(app)
     return client
 
@@ -66,67 +83,6 @@ async def sa_session():
         await trans.rollback()
         await connection.close()
         await engine.dispose()
-
-
-@pytest.fixture(scope="function")
-async def create_candidate_and_company(sa_session):
-    async with sa_session() as session:
-        company = UserFactory.build(is_company=True)
-        session.add(company)
-        candidate = UserFactory.build(is_company=False)
-        session.add(candidate)
-        await session.flush()
-    return candidate, company
-
-
-@pytest.fixture(scope="function")
-async def create_user_and_job(sa_session):
-    async with sa_session() as session:
-        user = UserFactory.build(is_company=True)
-        session.add(user)
-        job = JobFactory.build()
-        job.user_id = user.id
-        session.add(job)
-        await session.flush()
-    return user, job
-
-
-@pytest.fixture(scope="function")
-async def create_two_companies_candidate_and_job(sa_session):
-    async with sa_session() as session:
-        right_company = UserFactory.build(is_company=True)
-        session.add(right_company)
-        wrong_company = UserFactory.build(is_company=True)
-        session.add(wrong_company)
-        candidate = UserFactory.build(is_company=False)
-        session.add(candidate)
-        job = JobFactory.build()
-        job.user_id = right_company.id
-        session.add(job)
-        await session.flush()
-    return right_company, wrong_company, candidate, job
-
-
-@pytest.fixture(scope="function")
-async def create_users_job_and_response(sa_session):
-    async def creation(with_response=True):
-        async with sa_session() as session:
-            company = UserFactory.build(is_company=True)
-            session.add(company)
-            candidate = UserFactory.build(is_company=False)
-            session.add(candidate)
-            job = JobFactory.build()
-            job.user_id = company.id
-            session.add(job)
-            response = ResponseFactory.build()
-            if with_response:
-                response.user_id = candidate.id
-                response.job_id = job.id
-                session.add(response)
-            await session.flush()
-        return company, candidate, job, response
-
-    return creation
 
 
 @pytest_asyncio.fixture(scope="function")

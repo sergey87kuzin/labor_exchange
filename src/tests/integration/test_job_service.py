@@ -4,7 +4,7 @@ import pytest
 from fastapi import HTTPException
 
 from services.job_service import JobService
-from tools.fixtures.users import UserFactory
+from tools.factories.users import UserFactory
 from tools.security import create_token
 from web.schemas import JobCreateSchema, JobUpdateSchema
 from web.schemas.filter import FilterSchema
@@ -19,6 +19,7 @@ def assert_job(new_job, existing_job):
     assert new_job.is_active == existing_job.is_active
 
 
+@pytest.mark.asyncio
 async def test_job_service_fail_creation(job_repository, create_candidate_and_company):
     candidate, company = create_candidate_and_company
 
@@ -38,6 +39,7 @@ async def test_job_service_fail_creation(job_repository, create_candidate_and_co
     assert e_info.value.detail == "Можно создать вакансию только от имени своей компании"
 
 
+@pytest.mark.asyncio
 async def test_job_service_success_creation(job_repository, sa_session):
     async with sa_session() as session:
         user = UserFactory.build(is_company=True)
@@ -58,6 +60,7 @@ async def test_job_service_success_creation(job_repository, sa_session):
     assert_job(job_from_db, job_creation_data)
 
 
+@pytest.mark.asyncio
 async def test_job_service_failed_update(job_repository, create_two_companies_candidate_and_job):
     right_company, wrong_company, candidate, job = create_two_companies_candidate_and_job
 
@@ -79,6 +82,7 @@ async def test_job_service_failed_update(job_repository, create_two_companies_ca
     assert_job(job_from_db, job)
 
 
+@pytest.mark.asyncio
 async def test_job_service_success_update(job_repository, create_user_and_job):
     user, job = create_user_and_job
 
@@ -96,6 +100,7 @@ async def test_job_service_success_update(job_repository, create_user_and_job):
     assert_job(job_from_db, updated_job)
 
 
+@pytest.mark.asyncio
 async def test_job_service_failed_retrieve(
     job_repository, user_repository, create_two_companies_candidate_and_job
 ):
@@ -107,6 +112,7 @@ async def test_job_service_failed_retrieve(
     assert not result
 
 
+@pytest.mark.asyncio
 async def test_job_service_success_retrieve(
     job_repository, user_repository, create_two_companies_candidate_and_job
 ):
@@ -121,6 +127,7 @@ async def test_job_service_success_retrieve(
         assert_job(result, job)
 
 
+@pytest.mark.asyncio
 async def test_job_service_retrieve_many(
     job_repository, user_repository, create_two_companies_candidate_and_job
 ):
@@ -141,6 +148,7 @@ async def test_job_service_retrieve_many(
         assert_job(jobs_from_db[0], job)
 
 
+@pytest.mark.asyncio
 async def test_job_service_failed_delete(job_repository, create_two_companies_candidate_and_job):
     right_company, wrong_company, candidate, job = create_two_companies_candidate_and_job
 
@@ -148,6 +156,7 @@ async def test_job_service_failed_delete(job_repository, create_two_companies_ca
     assert not deleted_job
 
 
+@pytest.mark.asyncio
 async def test_job_service_success_delete(job_repository, create_two_companies_candidate_and_job):
     right_company, wrong_company, candidate, job = create_two_companies_candidate_and_job
 

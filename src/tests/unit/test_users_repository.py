@@ -3,8 +3,8 @@ from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError
 
 from repositories import UserRepository
-from tools.fixtures.jobs import JobFactory
-from tools.fixtures.users import UserFactory
+from tools.factories.jobs import JobFactory
+from tools.factories.users import UserFactory
 from tools.security import hash_password
 from web.schemas import UserCreateSchema, UserUpdateSchema
 

@@ -2,7 +2,7 @@ import pytest
 from fastapi import HTTPException
 
 from services.response_service import ResponseService
-from tools.fixtures.users import UserFactory
+from tools.factories.users import UserFactory
 from web.schemas import ResponseUpdateSchema
 
 
@@ -10,6 +10,7 @@ def assert_response(new_response, existing_response):
     assert new_response.message == existing_response.message
 
 
+@pytest.mark.asyncio
 async def test_response_service_fail_creation(
     response_repository, create_two_companies_candidate_and_job
 ):
@@ -23,6 +24,7 @@ async def test_response_service_fail_creation(
     assert e_info.value.detail == "Откликаться на вакансии могут только соискатели"
 
 
+@pytest.mark.asyncio
 async def test_response_service_success_creation(
     response_repository, create_two_companies_candidate_and_job
 ):
@@ -39,6 +41,7 @@ async def test_response_service_success_creation(
     assert response_from_db.job.id == job.id
 
 
+@pytest.mark.asyncio
 async def test_response_service_failed_update(response_repository, create_users_job_and_response):
     company, candidate, job, response = await create_users_job_and_response(with_response=True)
 
@@ -53,6 +56,7 @@ async def test_response_service_failed_update(response_repository, create_users_
     assert response_from_db.message == response.message
 
 
+@pytest.mark.asyncio
 async def test_response_service_success_update(response_repository, create_users_job_and_response):
     company, candidate, job, response = await create_users_job_and_response(with_response=True)
 
@@ -69,6 +73,7 @@ async def test_response_service_success_update(response_repository, create_users
     assert response_from_db.job.id == job.id
 
 
+@pytest.mark.asyncio
 async def test_response_service_failed_retrieve(
     response_repository, create_users_job_and_response, sa_session
 ):
@@ -84,6 +89,7 @@ async def test_response_service_failed_retrieve(
     assert not result
 
 
+@pytest.mark.asyncio
 async def test_response_service_success_retrieve(
     response_repository,
     create_users_job_and_response,
@@ -99,6 +105,7 @@ async def test_response_service_success_retrieve(
         assert response_from_db.job.id == job.id
 
 
+@pytest.mark.asyncio
 async def test_response_service_failed_retrieve_many(
     response_repository, job_repository, create_users_job_and_response, sa_session
 ):
@@ -123,6 +130,7 @@ async def test_response_service_failed_retrieve_many(
         assert e_info.value.detail == error_text
 
 
+@pytest.mark.asyncio
 async def test_response_service_success_retrieve_many(
     response_repository,
     job_repository,
@@ -143,6 +151,7 @@ async def test_response_service_success_retrieve_many(
     assert response_from_db.user.id == candidate.id
 
 
+@pytest.mark.asyncio
 async def test_response_service_failed_delete(
     response_repository, create_users_job_and_response, sa_session
 ):
@@ -160,6 +169,7 @@ async def test_response_service_failed_delete(
     assert not deleted_response
 
 
+@pytest.mark.asyncio
 async def test_job_service_success_delete(response_repository, create_users_job_and_response):
     company, candidate, job, response = await create_users_job_and_response(with_response=True)
 

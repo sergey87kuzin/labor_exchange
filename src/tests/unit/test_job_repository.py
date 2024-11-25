@@ -1,7 +1,9 @@
 from decimal import Decimal
 
+import pytest
+
 from storage.sqlalchemy.tables import Job
-from tools.fixtures.users import UserFactory
+from tools.factories.users import UserFactory
 from web.schemas import JobCreateSchema, JobUpdateSchema
 from web.schemas.filter import FilterSchema
 
@@ -17,6 +19,7 @@ def job_assertion(current_job: Job, expected_job: Job, user_id: int) -> None:
     assert current_job.user.id == user_id
 
 
+@pytest.mark.asyncio
 async def test_get_all(job_repository, create_user_and_job):
     user, job = create_user_and_job
 
@@ -36,6 +39,7 @@ async def test_get_all(job_repository, create_user_and_job):
         job_assertion(job_from_repo, job, user.id)
 
 
+@pytest.mark.asyncio
 async def test_get_by_id(job_repository, create_user_and_job):
     user, job = create_user_and_job
 
@@ -46,6 +50,7 @@ async def test_get_by_id(job_repository, create_user_and_job):
         job_assertion(job, job, user.id)
 
 
+@pytest.mark.asyncio
 async def test_create(job_repository, sa_session):
     async with sa_session() as session:
         user = UserFactory.build(is_company=True)
@@ -66,6 +71,7 @@ async def test_create(job_repository, sa_session):
     assert new_job.salary_to == Decimal("100000.01")
 
 
+@pytest.mark.asyncio
 async def test_update(job_repository, create_user_and_job):
     user, job = create_user_and_job
 
@@ -83,6 +89,7 @@ async def test_update(job_repository, create_user_and_job):
     assert updated_job.salary_from == Decimal("10000.01")
 
 
+@pytest.mark.asyncio
 async def test_update_job_by_other_user(job_repository, sa_session, create_user_and_job):
     user, job = create_user_and_job
     async with sa_session() as session:
@@ -100,6 +107,7 @@ async def test_update_job_by_other_user(job_repository, sa_session, create_user_
     assert not updated_job
 
 
+@pytest.mark.asyncio
 async def test_delete(job_repository, create_user_and_job):
     user, job = create_user_and_job
 

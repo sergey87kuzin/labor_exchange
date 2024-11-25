@@ -1,6 +1,9 @@
+import pytest
+
 from web.schemas import ResponseCreateSchema, ResponseUpdateSchema
 
 
+@pytest.mark.asyncio
 async def test_get_all(response_repository, create_users_job_and_response):
     company, candidate, job, response = await create_users_job_and_response()
 
@@ -20,6 +23,7 @@ async def test_get_all(response_repository, create_users_job_and_response):
         assert response_from_repo.message == response.message
 
 
+@pytest.mark.asyncio
 async def test_get_by_id(response_repository, create_users_job_and_response):
     company, candidate, job, response = await create_users_job_and_response()
 
@@ -30,6 +34,7 @@ async def test_get_by_id(response_repository, create_users_job_and_response):
     assert current_response.message == response.message
 
 
+@pytest.mark.asyncio
 async def test_create(response_repository, create_users_job_and_response):
     company, candidate, job, response = await create_users_job_and_response(with_response=False)
 
@@ -45,6 +50,7 @@ async def test_create(response_repository, create_users_job_and_response):
     assert new_response.user_id == candidate.id
 
 
+@pytest.mark.asyncio
 async def test_update(response_repository, create_users_job_and_response):
     company, candidate, job, response = await create_users_job_and_response()
 
@@ -65,6 +71,7 @@ async def test_update(response_repository, create_users_job_and_response):
     assert not wrong_response, "Другим пользователям позволено редактировать отклик"
 
 
+@pytest.mark.asyncio
 async def test_delete(response_repository, create_users_job_and_response):
     company, candidate, job, response = await create_users_job_and_response()
 
