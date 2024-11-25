@@ -29,7 +29,7 @@ async def get_all_jobs(
     )
 
 
-@jobs_router.get("/job_id")
+@jobs_router.get("/{job_id}")
 @inject
 async def get_job_by_id(
     job_id: int,
@@ -50,7 +50,7 @@ async def create_job(
     return await JobService(job_repository).create_object(current_user, job_creation_data)
 
 
-@jobs_router.patch("/job_id")
+@jobs_router.patch("/{job_id}")
 @inject
 async def update_job(
     job_id: int,
@@ -63,7 +63,7 @@ async def update_job(
     )
 
 
-@jobs_router.delete("/job_id")
+@jobs_router.delete("/{job_id}")
 @inject
 async def delete_job(
     job_id: int,

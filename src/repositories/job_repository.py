@@ -19,7 +19,7 @@ class JobRepository(IRepositoryAsync):
     async def create(self, job_to_create: JobCreateSchema) -> JobModel:
         async with self.session() as session:
 
-            job = Job(**job_to_create.dict())
+            job = Job(**job_to_create.model_dump())
 
             session.add(job)
             await session.commit()
@@ -74,7 +74,9 @@ class JobRepository(IRepositoryAsync):
                 return None
 
             update_data = {
-                key: value for key, value in job_update_dto.dict().items() if value is not None
+                key: value
+                for key, value in job_update_dto.model_dump().items()
+                if value is not None
             }
             query = update(Job).filter_by(id=job_id).values(**update_data).returning(Job)
             result = await session.execute(query)

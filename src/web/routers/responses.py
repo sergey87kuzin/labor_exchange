@@ -31,7 +31,7 @@ async def get_response_by_user_id(
     )
 
 
-@responses_router.get("/job_id")
+@responses_router.get("/job/{job_id}")
 @inject
 async def get_responses_by_job_id(
     job_id: int,
@@ -51,7 +51,7 @@ async def get_responses_by_job_id(
     )
 
 
-@responses_router.get("/response_id")
+@responses_router.get("/{response_id}")
 @inject
 async def get_response_by_id(
     response_id: int,
@@ -65,7 +65,7 @@ async def get_response_by_id(
     )
 
 
-@responses_router.post("/job_id")
+@responses_router.post("/{job_id}")
 @inject
 async def response_job(
     job_id: int,
@@ -82,7 +82,7 @@ async def response_job(
     )
 
 
-@responses_router.patch("/response_id")
+@responses_router.patch("/{response_id}")
 @inject
 async def update_response(
     response_id: int,
@@ -99,7 +99,7 @@ async def update_response(
     )
 
 
-@responses_router.delete("/response_id")
+@responses_router.delete("/{response_id}")
 @inject
 async def delete_response(
     response_id: int,
