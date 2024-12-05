@@ -3,7 +3,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from dependencies.containers import RepositoriesContainer
 from repositories import UserRepository
-from tools.security import create_access_token, verify_password
+from tools.get_user_from_token import get_user_from_token
+from tools.security import create_token, verify_password
 from web.schemas import LoginSchema, TokenSchema
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -23,4 +24,22 @@ async def login(
             detail="Некорректное имя пользователя или пароль",
         )
 
-    return TokenSchema(access_token=create_access_token({"sub": user.email}), token_type="Bearer")
+    return TokenSchema(
+        access_token=create_token({"sub": user.email}),
+        refresh_token=create_token({"sub": user.email}, refresh=True),
+        token_type="Bearer",
+    )
+
+
+@router.post("/refresh", response_model=TokenSchema)
+@inject
+async def refresh(
+    refresh_token: str,
+    user_repository: UserRepository = Depends(Provide[RepositoriesContainer.user_repository]),
+):
+    user = await get_user_from_token(refresh_token, user_repository)
+    return TokenSchema(
+        access_token=create_token({"sub": user.email}),
+        refresh_token=create_token({"sub": user.email}, refresh=True),
+        token_type="Bearer",
+    )
