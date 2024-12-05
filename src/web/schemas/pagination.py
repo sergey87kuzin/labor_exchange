@@ -1,9 +1,13 @@
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import Field
+
+from web.schemas.base import CustomBaseModel
 
 
-class PaginationSchema(BaseModel):
+class PaginationSchema(CustomBaseModel):
+    """Класс пагинации"""
+
     limit: Optional[int] = Field(
         gt=0, le=100, description="Количество записей в запросе", default=100
     )
