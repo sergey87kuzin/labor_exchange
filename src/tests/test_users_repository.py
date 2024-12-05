@@ -14,9 +14,9 @@ async def test_get_all(user_repository, sa_session):
     async with sa_session() as session:
         user = UserFactory.build()
         session.add(user)
-        session.flush()
+        await session.flush()
 
-    all_users = await user_repository.retrieve_many()
+    all_users = await user_repository.retrieve_many(show_companies=user.is_company)
     assert all_users
     assert len(all_users) == 1
 
@@ -33,7 +33,7 @@ async def test_get_all_with_relations(user_repository, sa_session):
         job = Job(user_id=user.id)
         session.add(user)
         session.add(job)
-        session.flush()
+        await session.flush()
 
     all_users = await user_repository.retrieve_many(include_relations=True)
     assert all_users
@@ -52,7 +52,7 @@ async def test_get_by_id(user_repository, sa_session):
     async with sa_session() as session:
         user = UserFactory.build()
         session.add(user)
-        session.flush()
+        await session.flush()
 
     current_user = await user_repository.retrieve(id=user.id)
     assert current_user is not None
@@ -96,7 +96,7 @@ async def test_update(user_repository, sa_session):
     async with sa_session() as session:
         user = UserFactory.build()
         session.add(user)
-        session.flush()
+        await session.flush()
 
     user_update_dto = UserUpdateSchema(name="updated_name")
     updated_user = await user_repository.update(id=user.id, user_update_dto=user_update_dto)
@@ -111,7 +111,7 @@ async def test_update_email_from_other_user(user_repository, sa_session):
         user2 = UserFactory.build()
         session.add(user)
         session.add(user2)
-        session.flush()
+        await session.flush()
 
     user_update_dto = UserUpdateSchema(email=user.email)
 
@@ -124,8 +124,8 @@ async def test_delete(user_repository, sa_session):
     async with sa_session() as session:
         user = UserFactory.build()
         session.add(user)
-        session.flush()
+        await session.flush()
 
-    await user_repository.delete(id=user.id)
+    await user_repository.delete(user_id=user.id)
     res = await user_repository.retrieve(id=user.id)
     assert not res

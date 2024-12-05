@@ -1,12 +1,15 @@
 from datetime import datetime
-from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import Field
+
+from web.schemas.base import CustomBaseModel
 
 
-class FilterSchema(BaseModel):
-    salary_from: Optional[int] = None
-    salary_to: Optional[int] = None
-    created_at: Optional[datetime] = None
-    company_id: Optional[int] = None
-    title: Optional[str] = None
+class FilterSchema(CustomBaseModel):
+    """Класс параметров фильтрации списка вакансий"""
+
+    salary_from: int | None = Field(default=None, description="Зарплата от")
+    salary_to: int | None = Field(default=None, description="Зарплата до")
+    created_at: datetime | None = Field(default=None, description="Дата создания вакансии, от")
+    company_id: int | None = Field(default=None, description="Идентификатор компании")
+    title: str | None = Field(default=None, description="Название вакансии")
